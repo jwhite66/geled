@@ -1,3 +1,6 @@
+// TODO:  Prevent overdrive; writing over back end of prior instructions
+// TODO:  Make drive use select to get the ack ASAP
+
 #define MAX_BRIGHT 0xCC
 #define MAX_STRINGS 6
 #define SAFE_SLICES_AHEAD   50      /* The raw code takes about 380 us, + ~ 100 us per bulb */
@@ -88,6 +91,7 @@ void write_bits(unsigned char **p, unsigned char one_strings, unsigned char zero
     /* Always ends with high */
     **p |= (one_strings | zero_strings);
     INC_P(*p);
+
 }
 
 typedef struct bulb_struct
@@ -112,6 +116,21 @@ void write_raw_bulbs(int count, bulb *bulbs)
     unsigned char *start;
 
     start = get_ringp();
+
+#if defined(DEBUG)
+    {
+        char buf[245];
+        int k;
+
+        for (k = 0; k < count; k++)
+        {
+            sprintf(buf, "%02x: str 0x%x|addr 0x%x|bright 0x%x|r 0x%x|g 0x%x|b 0x%x",
+                k, bulbs[k].string, bulbs[k].addr, bulbs[k].bright, bulbs[k].r,
+                bulbs[k].g, bulbs[k].b);
+            Serial.println(buf);
+        }
+    }
+#endif
 
     /*------------------------------------------------------------------------
     **  Get a point far enough out that we'll finish writing this
@@ -221,98 +240,19 @@ void write_raw_bulbs(int count, bulb *bulbs)
 
 }
 
-
-void write_bulb(int string, unsigned char addr, unsigned char bright, unsigned char r, unsigned char g, unsigned char b)
-{
-    unsigned char *p;
-    unsigned int rgb;
-    int i;
-
-    unsigned char *start;
-
-    start = get_ringp();
-
-    /*------------------------------------------------------------------------
-    **  Get a point far enough out that we'll finish writing this
-    **   before it comes around.
-    **----------------------------------------------------------------------*/
-    p = start + SAFE_SLICES_AHEAD;
-    if (p >= RING_TOP)
-        p = ring + (p - RING_TOP);
-
-    /* 10 us high */
-    *p |= _BV(string);
-    INC_P(p);
-
-    addr <<= 2;
-    if (bright > MAX_BRIGHT)
-        bright = MAX_BRIGHT;
-    rgb = (b << 12) | (g << 8) | (r << 4);
-    for (i = 6; i; i--)
-    {
-        write_bits(&p, addr & 0x80 ? _BV(string) : 0, addr & 0x80 ? 0 : _BV(string));
-        addr <<= 1;
-    }
-    for (i = 8; i; i--)
-    {
-        write_bits(&p, bright & 0x80 ? _BV(string) : 0, bright & 0x80 ? 0 : _BV(string));
-        bright <<= 1;
-    }
-    for (i = 12; i; i--)
-    {
-        write_bits(&p, rgb & 0x8000 ? _BV(string) : 0, rgb & 0x8000 ? 0 : _BV(string));
-        rgb <<= 1;
-    }
-
-    /* 30 us low */
-    for (i = 0; i < 3; i++)
-    {
-        *p &= (~_BV(string)); 
-        INC_P(p);
-    }
-
-#if defined(MEASURE_TIMING)
-    {
-    unsigned char *end;
-    end = get_ringp();
-    Serial.print("Wrote bulb ");
-    Serial.print(addr);
-    Serial.print(" in ");
-    if (end > start)
-        Serial.print(end - start);
-    else
-        Serial.print(end - ring + RING_TOP - start);
-    Serial.println(" slices.");
-    }
-#endif
-
-}
-
-void establishContact()
-{
-    while (Serial.available() <= 0)
-    {
-        Serial.print('A', BYTE);   // send a capital A
-        delay(300);
-    }
-    Serial.read();
-    Serial.println("Ready for commands");
-}
-
 void setup()
 {
     memset(ring, 0, sizeof(ring));
     Serial.begin(115200);
     start_timer1();
     DDRB = 0x3F;
-    //establishContact();  // send a byte to establish contact until receiver responds
 }
 
 
 void loop()
 {
     unsigned char b;
-    int last_bulb = 1;
+    int more_bulbs = 0;
     static bulb bulbs[MAX_STRINGS], *p;
     static int bulb_count = 0;
 
@@ -339,101 +279,15 @@ void loop()
 
         b = Serial.read();
         if (b & 0x80)
-            last_bulb = 0;
+            more_bulbs = 1;
 
         p->addr = b << 2;
         p->bright = Serial.read();
 
-        if (++bulb_count >= MAX_STRINGS || last_bulb)
+        if (++bulb_count >= MAX_STRINGS || (! more_bulbs))
         {
             write_raw_bulbs(bulb_count, bulbs);
             bulb_count = 0;
-        }
-    }
-}
-
-void old_loop()
-{
-    int rc;
-    static int target_bulb = 0;
-    int i;
-
-    if (Serial.available() > 0)
-    {
-        int inByte = 0;
-
-        inByte = Serial.read();
-
-        if (inByte == 's')
-        {
-            Serial.println("Issuing setup sequence");
-            for (i = 0; i < 36; i++)
-            {
-                write_bulb(0, i, MAX_BRIGHT, 0, 0, 0);
-                delay(100);
-            }
-            Serial.println("Done.");
-        }
-        else if (inByte == 'b')
-        {
-            Serial.println("blue");
-            write_bulb(0, target_bulb, MAX_BRIGHT, 0, 0, 15);
-        }
-        else if (inByte == 'r')
-        {
-            Serial.println("red");
-            write_bulb(1, target_bulb, MAX_BRIGHT, 15, 0, 0);
-        }
-        else if (inByte == 'g')
-        {
-            Serial.println("green");
-            write_bulb(0, target_bulb, MAX_BRIGHT, 0, 15, 0);
-        }
-        else if (inByte == 'o')
-        {
-            Serial.println("off");
-            write_bulb(0, target_bulb, MAX_BRIGHT, 0, 0, 0);
-        }
-        else if (inByte == 'd')
-        {
-            Serial.println("dim");
-            write_bulb(0, target_bulb, MAX_BRIGHT / 2, 15, 15, 15);
-        }
-        else if (inByte == 'a')
-        {
-            bulb testme[3];
-            Serial.println("testing");
-            testme[0].string = _BV(2);
-            testme[0].addr = target_bulb << 2;
-            testme[0].bright = MAX_BRIGHT;
-            testme[0].r = 15 << 4;
-            testme[0].b = 15 << 4;
-            testme[0].g = 0;
-            testme[1].string = _BV(1);
-            testme[1].addr = target_bulb << 2;
-            testme[1].bright = MAX_BRIGHT;
-            testme[1].r = 0;
-            testme[1].b = 15 << 4;
-            testme[1].g = 15 << 4;;
-            testme[2].string = _BV(0);
-            testme[2].addr = target_bulb << 2;
-            testme[2].bright = MAX_BRIGHT;
-            testme[2].r = 0;
-            testme[2].b = 15 << 4;
-            testme[2].g = 15 << 4;;
-            write_raw_bulbs(3, testme);
-        }
-        else if (inByte >= '0' && inByte <= '9')
-        {
-            target_bulb = (inByte - '0');
-            Serial.print("target bulb ");
-            Serial.println(target_bulb);
-        }
-        else
-        {
-            Serial.print("lighting bulb ");
-            Serial.println(target_bulb);
-            write_bulb(0, target_bulb, MAX_BRIGHT, 15, 15, 15);
         }
     }
 }
