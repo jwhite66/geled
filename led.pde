@@ -1,16 +1,10 @@
-// TODO:  Prevent overdrive; writing over back end of prior instructions
-// TODO:  Make drive use select to get the ack ASAP
+#include "led.h"
 
-#define MAX_BRIGHT 0xCC
-#define MAX_STRINGS 6
-#define SAFE_SLICES_AHEAD   50      /* The raw code takes about 380 us, + ~ 100 us per bulb */
-#define SLICES_PER_BULB     10
-
-unsigned char ring[100 * 10];  /* 100 10us slices makes 1 ms, let's hold enough for 10 ms */
+unsigned char ring[100 * 2];  /* 100 10us slices makes 1 ms, let's hold enough for 10 ms */
 #define RING_TOP (ring + sizeof(ring))
 unsigned char *ringp = ring;
+int padding = 0;
 
-//#define MEASURE_TIMING
 
 ISR(TIMER1_COMPA_vect)
 {
@@ -18,6 +12,9 @@ ISR(TIMER1_COMPA_vect)
     *ringp++ = 0;
     if (ringp >= RING_TOP)
         ringp = ring;
+
+    if (padding > 0)
+        padding--;
 }
 
 void start_timer1(void)
@@ -33,8 +30,7 @@ void start_timer1(void)
     TCCR1A = 0;
 
     /* What count to interrupt the timer upon */
-    OCR1A = 160;  /* 16,000,000 cycles / sec == 16 cyles / us */
-                  /*  We crave one interrupt every 10 us, so 160 */
+    OCR1A = CYCLES_PER_SLICE;
 
     TCCR1B = _BV(WGM12) | _BV(CS10);
                   /*  Turn on CTC1 mode, with no divider */
@@ -74,6 +70,33 @@ unsigned char *get_ringp(void)
     return p;
 }
 
+int get_padding(void)
+{
+    unsigned char sreg;
+    int i;
+    /* Save global interrupt flag */
+    sreg = SREG;
+    /* Disable interrupts */
+    cli();
+    i = padding;
+    /* Restore global interrupt flag */
+    SREG = sreg;
+
+    return i;
+}
+
+void set_padding(int p)
+{
+    unsigned char sreg;
+    /* Save global interrupt flag */
+    sreg = SREG;
+    /* Disable interrupts */
+    cli();
+    padding = p; 
+    /* Restore global interrupt flag */
+    SREG = sreg;
+}
+
 #define INC_P(in_p)   { if (++(in_p) == RING_TOP) (in_p) = ring; }
 
 void write_bits(unsigned char **p, unsigned char one_strings, unsigned char zero_strings)
@@ -82,7 +105,7 @@ void write_bits(unsigned char **p, unsigned char one_strings, unsigned char zero
     **p &= ~(one_strings | zero_strings);
     INC_P(*p);
 
-    /* 20 us of low for one, 20 us of high for off */
+    /* 2 slices of low for one, 2 of high for off */
     **p &= ~one_strings;
     **p |= zero_strings;
 
@@ -94,19 +117,10 @@ void write_bits(unsigned char **p, unsigned char one_strings, unsigned char zero
 
 }
 
-typedef struct bulb_struct
-{
-    unsigned char string;
-    unsigned char addr;
-    unsigned char bright;
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
-} bulb;
-
 void write_raw_bulbs(int count, bulb *bulbs)
 {
     unsigned char *p;
+    int pad;
     int i, j;
 
     unsigned char all_bulbs;
@@ -136,10 +150,16 @@ void write_raw_bulbs(int count, bulb *bulbs)
     **  Get a point far enough out that we'll finish writing this
     **   before it comes around.
     **----------------------------------------------------------------------*/
-    p = start + SAFE_SLICES_AHEAD + (count * SLICES_PER_BULB);
+    pad = get_padding();
+    if (pad < SAFE_SLICES_AHEAD + (count * SLICES_PER_BULB))
+        pad = SAFE_SLICES_AHEAD + (count * SLICES_PER_BULB);
+
+    set_padding(pad + SLICES_TO_SHOW_BULB);
+
+    p = start + pad;
+
     if (p >= RING_TOP)
         p = ring + (p - RING_TOP);
-
 
     all_bulbs = 0;
     for (i = 0; i < count; i++)
@@ -225,6 +245,7 @@ void write_raw_bulbs(int count, bulb *bulbs)
         INC_P(p);
     }
 
+//#define MEASURE_TIMING
 #if defined(MEASURE_TIMING)
     {
     unsigned char *end;
@@ -240,12 +261,20 @@ void write_raw_bulbs(int count, bulb *bulbs)
 
 }
 
+/*----------------------------------------------------------------------------
+**  Initial setup
+**--------------------------------------------------------------------------*/
 void setup()
 {
     memset(ring, 0, sizeof(ring));
     Serial.begin(115200);
+
+    /*------------------------------------------------------------------------
+    ** Start our out bound processing loop.  DDRB sets the direction of the
+    **  PORTB register; we want it all set to output
+    **----------------------------------------------------------------------*/
     start_timer1();
-    DDRB = 0x3F;
+    DDRB = ALL_STRINGS_MASK;
 }
 
 
@@ -253,14 +282,20 @@ void loop()
 {
     unsigned char b;
     int more_bulbs = 0;
-    static bulb bulbs[MAX_STRINGS], *p;
+    static bulb bulbs[STRING_COUNT];
+    bulb *p;
     static int bulb_count = 0;
 
+    /*------------------------------------------------------------------------
+    **  Pull a command from the serial port, and execute it
+    **----------------------------------------------------------------------*/
     if (Serial.available() >= 4)
     {
-        p = &bulbs[bulb_count];
-
         b = Serial.read();
+
+        /*--------------------------------------------------------------------
+        **  Command 1:  Echo.  We just return the next 3 bytes
+        **------------------------------------------------------------------*/
         if (b & 0x80)
         {
             Serial.print((char) Serial.read());
@@ -268,23 +303,43 @@ void loop()
             Serial.print((char) Serial.read());
             return;
         }
-        p->b = b << 4;
-        
-        b >>=4;
+
+        /*--------------------------------------------------------------------
+        **  All other commands are now giving us a bulb to light.
+        **      The general structure is:
+        **   cmd str(3) blue(4)  |  g(4) r(4)  |  more_bulbs unused addr(6) | bright
+        **  Note that we store all values left shifted, so they can
+        **    just be shifted out for high performance.
+        **------------------------------------------------------------------*/
+        p = &bulbs[bulb_count];
+
+        p->b = b << 4;   /* Grab blue */
+
+        b >>=4;          /* Grab string # */
         p->string = _BV(b);
-        
+
+        /*  Green on the high, red on the low */
         b = Serial.read();
         p->g = b & 0xF0;
         p->r = b << 4;
 
+        /*--------------------------------------------------------------------
+        **  We can set up to STRING_COUNT worth of bulbs to write for each
+        **      time, although note that you cannot write the same string
+        **      twice; it'll just fail.
+        **------------------------------------------------------------------*/
         b = Serial.read();
         if (b & 0x80)
             more_bulbs = 1;
 
         p->addr = b << 2;
-        p->bright = Serial.read();
 
-        if (++bulb_count >= MAX_STRINGS || (! more_bulbs))
+        /* Bright is nice and simple, but let's protect things */
+        p->bright = Serial.read();
+        if (p->bright > MAX_BRIGHT)
+            p->bright = MAX_BRIGHT;
+
+        if (++bulb_count >= STRING_COUNT || (! more_bulbs))
         {
             write_raw_bulbs(bulb_count, bulbs);
             bulb_count = 0;
