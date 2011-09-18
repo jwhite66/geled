@@ -138,6 +138,15 @@ void usage(char *argv0)
     printf("Drive a string of GE lights connected to an Arduino.\n");
 }
 
+void parse_range(char *r, int *begin, int *end)
+{
+    *begin = *end = atoi(r);
+    while (*r && *r != '-')
+        r++;
+    if (*r)
+        *end = atoi(r + 1);
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -146,12 +155,13 @@ int main(int argc, char *argv[])
     int c;
     int perform_init = 0;
     long writes = 0;
-    int addr;
-    int string;
-    int bright;
-    int red;
-    int green;
-    int blue;
+    int addr, addr_start = 0, addr_end = 0;
+    int string, string_start = 0, string_end = 0;
+    int bright, bright_start = 0, bright_end = 0;
+    int red, red_start = 0, red_end = 0;
+    int green, green_start = 0, green_end = 0;
+    int blue, blue_start = 0, blue_end = 0;
+    unsigned long delay = 100;
     unsigned char out[4];
 
     static struct option long_options[] =
@@ -164,6 +174,7 @@ int main(int argc, char *argv[])
         {"red",     required_argument,  NULL, 'r'},
         {"green",   required_argument,  NULL, 'g'},
         {"blue",    required_argument,  NULL, 'l'},
+        {"delay",   required_argument,  NULL, 'd'},
         {0, 0, 0, 0}
     };
 
@@ -176,7 +187,7 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        c = getopt_long(argc, argv, "iva:s:b:r:g:l:", long_options, NULL);
+        c = getopt_long(argc, argv, "iva:s:b:r:g:l:d:", long_options, NULL);
         if (c == -1)
             break;
 
@@ -189,22 +200,25 @@ int main(int argc, char *argv[])
                 g_verbose = 1;
                 break;
             case 'a':
-                addr = atoi(optarg);
+                parse_range(optarg, &addr_start, &addr_end);
                 break;
             case 's':
-                string = atoi(optarg);
+                parse_range(optarg, &string_start, &string_end);
                 break;
             case 'b':
-                bright = atoi(optarg);
+                parse_range(optarg, &bright_start, &bright_end);
                 break;
             case 'r':
-                red = atoi(optarg);
+                parse_range(optarg, &red_start, &red_end);
                 break;
             case 'g':
-                green = atoi(optarg);
+                parse_range(optarg, &green_start, &green_end);
                 break;
             case 'l':
-                blue = atoi(optarg);
+                parse_range(optarg, &blue_start, &blue_end);
+                break;
+            case 'd':
+                delay = atoi(optarg);
                 break;
             default:
                 usage(argv[0]);
@@ -235,64 +249,30 @@ int main(int argc, char *argv[])
 
     flush_buffer(fd);
 
-
     if (perform_init)
         init(fd);
     else
     {
-        build_bulb(out, string, addr, bright, red, green, blue, 0);
-        write(fd, out, 4);
-        writes++;
-    }
-
-
-#if defined(HACK_OLD_STUFF_OUT_FOR_NOW)
-r = 1;
-for (bright = 0; bright <= 0xcc; bright++)
-for (addr = 0x19; addr <= 0x19; addr++)
-{
-for (string = 0; string < 1; string++)
-{
-build_bulb(out, string, addr, bright, 15, 0, 0, string == 0 ? 0 : 1);
-write(fd, out, 4);
-writes++;
-r++;
-
-printf("0x%x: 0x%x\n", addr, r);
-//usleep(10 * 1000);
-}
-if (r > 15)
-    r = 1;
-if (getok(fd, 1, 100 * 1000) != 0)
-    fprintf(stderr, "Error getting okay\n");
-
-//usleep(10 * 1000);
-
-for (string = 0; string < 1; string++)
-{
-build_bulb(out, string, addr, 0, 0, 0, 0, string == 0 ? 0 : 1);
-write(fd, out, 4);
-writes++;
-}
-}
-flush_buffer(fd);
-#if 0
-    for (bright = 0xcc; bright <= 0xcc; bright += 0x40)
-        for (r = 5; r < 16; r += 5)
-            for (g = 5; g < 16; g += 5)
-                for (b = 5; b < 16; b += 5)
-                    for (addr = 0; addr < 36; addr++)
-                        for (string = 0; string < 6; string++)
+        for (addr = addr_start; addr <= addr_end; addr++)
+            for (bright = bright_start; bright <= bright_end; bright++)
+                for (red = red_start; red <= red_end; red++)
+                    for (green = green_start; green <= green_end; green++)
+                        for (blue = blue_start; blue <= blue_end; blue++)
                         {
-                            build_bulb(out, string, addr, bright, r, g, b, string == 5 ? 0 : 1);
-                            write(fd, out, 4);
-                            writes++;
+                            for (string = string_start; string <= string_end; string++)
+                            {
+                                build_bulb(out, string, addr, bright, red, green, blue, string == string_end ? 0 : 1);
+                                write(fd, out, 4);
+                                writes++;
+                            }
+
+                            usleep(delay);
                             if (getok(fd, 1, 100 * 1000) != 0)
                                 fprintf(stderr, "Error getting okay\n");
                         }
-#endif
+    }
 
-#endif
+    flush_buffer(fd);
 
     if (getok(fd, 1, 1000 * 1000) < 0)
         fprintf(stderr, "Error:  did not get closing ack\n");

@@ -50,11 +50,11 @@ OBJECTS=generated_led.o Print.o HardwareSerial.o wiring.o main.o
 
 all: $(TARGET_HEX) drive
 
-generated_led.cpp: led.pde
+generated_led.cpp: led.pde led.h
 	@echo '#include <WProgram.h>' > $@
 	@cat $< >>$@
 
-drive: drive.c
+drive: drive.c led.h
 	gcc -Wall -o $@ $<
 
 
