@@ -8,10 +8,6 @@ const static unsigned char *ring_fence = ring + sizeof(ring);
 volatile unsigned char *readp = ring;
 volatile unsigned char *writep = ring;
 
-int min_available = sizeof(ring);
-volatile unsigned char *save_readp;
-volatile unsigned char *save_writep;
-
 
 ISR(TIMER1_COMPA_vect)
 {
@@ -89,13 +85,6 @@ int available(void)
     else
         a = readp - writep;
 
-    if (a < min_available)
-    {
-        min_available = a;
-        save_readp = readp;
-        save_writep = writep;
-    }
-
     /* Restore global interrupt flag */
     SREG = sreg;
 
@@ -132,25 +121,10 @@ void write_raw_bulbs(int count, bulb *bulbs)
 
     unsigned char *start;
 
-#if defined(DEBUG)
-    {
-        char buf[245];
-        int k;
-
-        for (k = 0; k < count; k++)
-        {
-            sprintf(buf, "%02x: str 0x%x|addr 0x%x|bright 0x%x|r 0x%x|g 0x%x|b 0x%x",
-                k, bulbs[k].string, bulbs[k].addr, bulbs[k].bright, bulbs[k].r,
-                bulbs[k].g, bulbs[k].b);
-            Serial.println(buf);
-        }
-    }
-#endif
-
     if ((a = available()) < (SLICES_TO_SHOW_BULB + 1))
     {
         Serial.print(a);
-        Serial.println(" - overflow 2!");
+        Serial.println(" - overflow!");
         return;
     }
 
@@ -242,23 +216,9 @@ void write_raw_bulbs(int count, bulb *bulbs)
 
     set_writep(p);
 
-#if defined(HACKHACK)
-    if (p - writep > 0)
-        Serial.println(((int) (p - writep)) - SLICES_TO_SHOW_BULB );
-
-    Serial.print("p is now ");
-    Serial.println((int) p);
-    for (i = 0; i < 82; i++)
-    {
-        Serial.print((int) writep + i);
-        Serial.print(": ");
-        Serial.println((int) *(writep + i));
-    }
-#endif
 }
 
 static bulb bulbs[STRING_COUNT];
-unsigned char picket[10];
 static int bulb_count = 0;
 
 /*----------------------------------------------------------------------------
@@ -266,7 +226,6 @@ static int bulb_count = 0;
 **--------------------------------------------------------------------------*/
 void setup()
 {
-    memset(picket, 69, sizeof(picket));
     memset(ring, 0, sizeof(ring));
     Serial.begin(115200);
 
@@ -290,13 +249,6 @@ void process_bulb(unsigned char data[4])
     int more_bulbs = 0;
     bulb *p;
     int a;
-
-    if ((a = available()) < (SLICES_TO_SHOW_BULB + 1))
-    {
-        Serial.print(a);
-        Serial.println(" - overflow!");
-        return;
-    }
 
     p = &bulbs[bulb_count];
 
@@ -358,7 +310,7 @@ void loop()
             return;
         }
 
-        if (data[0] == 0x81)
+        else if (data[0] == 0x81)
         {
             Serial.print("ring");
             Serial.println((int) ring);
@@ -368,41 +320,26 @@ void loop()
             Serial.println((int) readp);
             Serial.print("writep ");
             Serial.println((int) writep);
-            Serial.print("min avail ");
-            Serial.println((int) min_available);
-            Serial.print("save readp");
-            Serial.println((int) save_readp);
-            Serial.print("save writep");
-            Serial.println((int) save_writep);
-            for (i = 0; i < sizeof(picket); i++)
-                if (picket[i] != 69)
-                {
-                    Serial.print("picket ");
-                    Serial.print(i);
-                    Serial.print(" is unexpectedly ");
-                    Serial.println((int)picket[i]);
-                }
             return;
         }
 
-        if (data[0] == 0x82)
+        else if (data[0] == 0x82)
         {
             unsigned char fakedata[4];
             for (i = 0; i < 100; i++)
             {
-                fakedata[0] = i % 16;
+                fakedata[0] = i % 13;
                 fakedata[1] = 0;
                 fakedata[2] = i % 36;
                 fakedata[3] = MAX_BRIGHT;
 
                 while (available() < (SLICES_TO_SHOW_BULB + 1))
                     ;
-                min_available = sizeof(ring);
-                save_readp = save_writep = 0;
                 process_bulb(fakedata);
             }
         }
 
-        process_bulb(data);
+        else
+            process_bulb(data);
     }
 }

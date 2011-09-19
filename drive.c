@@ -360,6 +360,8 @@ int main(int argc, char *argv[])
     else if (cmd > 0)
     {
         perform_cmd(fd, cmd);
+        if (g_verbose)
+            printf("Action done\n");
     }
     else if (strlen(custom) > 0)
         perform_custom(fd, custom);
