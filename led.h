@@ -15,10 +15,10 @@
 
 #define MICROS_PER_SLICE    ((CYCLES_PER_SLICE * 1000000) / F_CPU)
 
-#define SAFE_SLICES_AHEAD   50      /* The raw code takes about 380 us, + ~ 100 us per bulb */
-                                    /*    But we can start before we're all done */
-#define SLICES_PER_BULB     10
-#define SLICES_TO_SHOW_BULB 82
+
+#define TRAILING_LOWS       3
+#define SLICES_TO_SHOW_BULB (79 + TRAILING_LOWS)
+
 
 /*----------------------------------------------------------------------------
 **  Be careful - this struct is no for general purpose use.

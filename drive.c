@@ -46,7 +46,7 @@ int open_port(char *port_name)
     return (fd);
 }
 
-int readone(int fd, long max_usec)
+int findone(int fd, int target, long max_usec)
 {
     fd_set readfds;
     struct timeval tv;
@@ -59,15 +59,43 @@ int readone(int fd, long max_usec)
     tv.tv_sec = 0;
     tv.tv_usec = max_usec;
 
-    select(fd + 1, &readfds, NULL, NULL, &tv);
+    while (1)
+    {
+        select(fd + 1, &readfds, NULL, NULL, &tv);
 
-    rc = read(fd, &c, sizeof(c));
-    if (rc == 1)
-        return c;
+        rc = read(fd, &c, sizeof(c));
+        if (rc != 1)
+            break;
+
+        if (c == target)
+            return 1;
+        else
+            write(STDOUT_FILENO, &c, 1);
+    }
 
     return -1;
 }
 
+
+void writebuf(int fd, unsigned char *out, int size)
+{
+    int rc;
+    while (size > 0)
+    {
+        rc = write(fd, out, size); 
+        if (rc < 0)
+        {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                continue;
+
+            perror("writebuf: ");
+            return;
+        }
+
+        out += rc;
+        size -= rc;
+    }
+}
 
 void build_bulb(unsigned char *out, unsigned char string, unsigned char addr, 
             unsigned char bright, unsigned char r, unsigned char g, unsigned char b, int more_bulbs)
@@ -82,6 +110,7 @@ void flush_buffer(int fd)
 {
     int rc;
     char buf[32000];
+    memset(buf, 0, sizeof(buf));
     rc = read(fd, buf, sizeof(buf));
     if (rc > 0)
         write(STDOUT_FILENO, buf, rc);
@@ -95,16 +124,31 @@ int getok(int fd, int max_tries, long max_delay)
 
     for (i = 0; i < max_tries; i++)
     {
-        write(fd, aok, 4);
-        if (readone(fd, max_delay) == 'O' &&
-            readone(fd, max_delay) == 'K' &&
-            readone(fd, max_delay) == '\n')
+        writebuf(fd, aok, 4);
+        if (findone(fd, 'O', max_delay) &&
+            findone(fd, 'K', max_delay) &&
+            findone(fd, '\n', max_delay))
             return 0;
         flush_buffer(fd);
     }
 
     return -1;
 
+}
+
+void perform_cmd(int fd, int cmd)
+{
+    int i;
+    unsigned char out[4];
+    memset(out, 0, sizeof(out));
+    out[0] = cmd;
+    writebuf(fd, out, sizeof(out));
+
+    for (i = 0; i < 500; i++)
+    {
+        usleep(1000);
+        flush_buffer(fd);
+    }
 }
 
 void init(int fd)
@@ -121,7 +165,7 @@ void init(int fd)
         for (string = 0; string < STRING_COUNT; string++)
         {
             build_bulb(out, string, addr, 0, 0, 0, 0, string == (STRING_COUNT - 1) ? 0 : 1);
-            write(fd, out, 4);
+            writebuf(fd, out, 4);
         }
         if (getok(fd, 1, 100 * 1000) != 0)
             fprintf(stderr, "Error getting okay during init\n");
@@ -132,9 +176,61 @@ void init(int fd)
 
 }
 
+void perform_custom(int fd, char *tag)
+{
+    int string;
+    int addr;
+    int red;
+    unsigned char out[4];
+
+    if (strcmp(tag, "hammer") == 0)
+    {
+        build_bulb(out, 0, 0, 0xcc, 0, 15, 0, 0);
+        for (red = 0; red < 6000; red++)
+        {
+            writebuf(fd, out, 4);
+            if (getok(fd, 1, 100 * 1000) != 0)
+                fprintf(stderr, "Error getting okay\n");
+        }
+    }
+
+    if (strcmp(tag, "one") == 0)
+    {
+        build_bulb(out, 0, 0, 0xcc, 15, 0, 0, 0);
+        writebuf(fd, out, 4);
+        for (red = 0; red < 500; red++)
+        {
+            flush_buffer(fd);
+            usleep(1000);
+        }
+    }
+
+    if (strcmp(tag, "red") == 0)
+    {
+        while (1)
+        {
+            for (red = 0; red <= 15; red++)
+            {
+                for (addr = 0; addr <= 35; addr++)
+                {
+                    for (string = 0; string <= 5; string++)
+                    {
+                        build_bulb(out, string, addr, 0xcc, red, 0, 0, string == 5 ? 0 : 1);
+                        writebuf(fd, out, 4);
+                    }
+                        //if (getok(fd, 1, 100 * 1000) != 0)
+                        //    fprintf(stderr, "Error getting okay\n");
+                }
+            }
+        }
+    }
+}
+
 void usage(char *argv0)
 {
-    printf("%s: [--init] [--verbose]\n", argv0);
+    printf("%s: [--init] [--verbose] [--delay=usecs] [--custom=tag] [--cmd=n]\n", argv0);
+    printf("%*.*s", strlen(argv0), strlen(argv0), " ");
+    printf( "     [--string=n[-m]] [--addr=n[-m]] [--bright=n[-m]] [--red=n[-m]] [--green=n[-m]] [--blue=n[-m]]\n");
     printf("Drive a string of GE lights connected to an Arduino.\n");
 }
 
@@ -157,24 +253,28 @@ int main(int argc, char *argv[])
     long writes = 0;
     int addr, addr_start = 0, addr_end = 0;
     int string, string_start = 0, string_end = 0;
-    int bright, bright_start = 0, bright_end = 0;
+    int bright, bright_start = MAX_BRIGHT, bright_end = MAX_BRIGHT;
     int red, red_start = 0, red_end = 0;
     int green, green_start = 0, green_end = 0;
     int blue, blue_start = 0, blue_end = 0;
+    int cmd = 0;
     unsigned long delay = 100;
+    char custom[256] = {0};
     unsigned char out[4];
 
     static struct option long_options[] =
     {
         {"init",    no_argument,        NULL, 'i'},
         {"verbose", no_argument,        NULL, 'v'},
+        {"delay",   required_argument,  NULL, 'd'},
+        {"custom",  required_argument,  NULL, 'c'},
+        {"cmd",     required_argument,  NULL, 'm'},
         {"addr",    required_argument,  NULL, 'a'},
         {"string",  required_argument,  NULL, 's'},
         {"bright",  required_argument,  NULL, 'b'},
         {"red",     required_argument,  NULL, 'r'},
         {"green",   required_argument,  NULL, 'g'},
         {"blue",    required_argument,  NULL, 'l'},
-        {"delay",   required_argument,  NULL, 'd'},
         {0, 0, 0, 0}
     };
 
@@ -187,7 +287,7 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        c = getopt_long(argc, argv, "iva:s:b:r:g:l:d:", long_options, NULL);
+        c = getopt_long(argc, argv, "iva:s:b:r:g:l:d:c:", long_options, NULL);
         if (c == -1)
             break;
 
@@ -220,6 +320,12 @@ int main(int argc, char *argv[])
             case 'd':
                 delay = atoi(optarg);
                 break;
+            case 'm':
+                cmd = atoi(optarg);
+                break;
+            case 'c':
+                strcpy(custom, optarg);
+                break;
             default:
                 usage(argv[0]);
                 return(-1);
@@ -251,6 +357,12 @@ int main(int argc, char *argv[])
 
     if (perform_init)
         init(fd);
+    else if (cmd > 0)
+    {
+        perform_cmd(fd, cmd);
+    }
+    else if (strlen(custom) > 0)
+        perform_custom(fd, custom);
     else
     {
         for (addr = addr_start; addr <= addr_end; addr++)
@@ -262,13 +374,13 @@ int main(int argc, char *argv[])
                             for (string = string_start; string <= string_end; string++)
                             {
                                 build_bulb(out, string, addr, bright, red, green, blue, string == string_end ? 0 : 1);
-                                write(fd, out, 4);
+                                writebuf(fd, out, 4);
                                 writes++;
                             }
 
                             usleep(delay);
-                            if (getok(fd, 1, 100 * 1000) != 0)
-                                fprintf(stderr, "Error getting okay\n");
+                            //if (getok(fd, 1, 100 * 1000) != 0)
+                            //    fprintf(stderr, "Error getting okay\n");
                         }
     }
 
