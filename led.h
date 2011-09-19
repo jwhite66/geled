@@ -8,7 +8,7 @@
 #define ALL_STRINGS_MASK    0x3F
 
 
-#define SLICE_LEN_IN_MICROS 10
+#define SLICE_LEN_IN_MICROS 11
 #define CYCLES_PER_SLICE    ((F_CPU / 1000000) * SLICE_LEN_IN_MICROS)
     /* 16,000,000 cycles / sec == 16 cyles / us */
     /*  For one interrupt every 10 us, we'd get 160 */
