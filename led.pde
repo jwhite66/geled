@@ -121,12 +121,8 @@ void write_raw_bulbs(int count, bulb *bulbs)
 
     unsigned char *start;
 
-    if ((a = available()) < (SLICES_TO_SHOW_BULB + 1))
-    {
-        Serial.print(a);
-        Serial.println(" - overflow!");
-        return;
-    }
+    while (available() < (SLICES_TO_SHOW_BULB + 1))
+        ;
 
     p = (unsigned char *) writep;
 
@@ -326,7 +322,7 @@ void loop()
         else if (data[0] == 0x82)
         {
             unsigned char fakedata[4];
-            for (i = 0; i < 100; i++)
+            for (i = 0; i < 4000; i++)
             {
                 fakedata[0] = i % 13;
                 fakedata[1] = 0;
