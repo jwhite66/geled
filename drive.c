@@ -82,7 +82,7 @@ void writebuf(int fd, unsigned char *out, int size)
     int rc;
     while (size > 0)
     {
-        rc = write(fd, out, size); 
+        rc = write(fd, out, size);
         if (rc < 0)
         {
             if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -189,8 +189,7 @@ void perform_custom(int fd, char *tag)
         for (red = 0; red < 6000; red++)
         {
             writebuf(fd, out, 4);
-            if (getok(fd, 1, 100 * 1000) != 0)
-                fprintf(stderr, "Error getting okay\n");
+            flush_buffer(fd);
         }
     }
 
@@ -218,8 +217,6 @@ void perform_custom(int fd, char *tag)
                         build_bulb(out, string, addr, 0xcc, red, 0, 0, string == 5 ? 0 : 1);
                         writebuf(fd, out, 4);
                     }
-                        //if (getok(fd, 1, 100 * 1000) != 0)
-                        //    fprintf(stderr, "Error getting okay\n");
                 }
             }
         }
