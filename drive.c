@@ -380,9 +380,8 @@ int main(int argc, char *argv[])
                                 writes++;
                             }
 
-                            usleep(delay);
-                            //if (getok(fd, 1, 100 * 1000) != 0)
-                            //    fprintf(stderr, "Error getting okay\n");
+                            if (delay > 0)
+                                usleep(delay);
                         }
     }
 
