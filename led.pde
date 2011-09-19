@@ -322,17 +322,15 @@ void loop()
         else if (data[0] == 0x82)
         {
             unsigned char fakedata[4];
-            for (i = 0; i < 4000; i++)
+            for (i = 0; i < 36; i++)
             {
-                fakedata[0] = i % 13;
+                fakedata[0] = 13;
                 fakedata[1] = 0;
                 fakedata[2] = i % 36;
                 fakedata[3] = MAX_BRIGHT;
-
-                while (available() < (SLICES_TO_SHOW_BULB + 1))
-                    ;
                 process_bulb(fakedata);
             }
+            Serial.println("Wrote fake blue bulbs");
         }
 
         else
