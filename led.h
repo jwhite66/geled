@@ -8,7 +8,7 @@
 #define ALL_STRINGS_MASK    0x3F
 
 
-#define SLICE_LEN_IN_MICROS 11
+#define SLICE_LEN_IN_MICROS 5
 #define CYCLES_PER_SLICE    ((F_CPU / 1000000) * SLICE_LEN_IN_MICROS)
     /* 16,000,000 cycles / sec == 16 cyles / us */
     /*  For one interrupt every 10 us, we'd get 160 */
@@ -16,8 +16,12 @@
 #define MICROS_PER_SLICE    ((CYCLES_PER_SLICE * 1000000) / F_CPU)
 
 
-#define TRAILING_LOWS       3
-#define SLICES_TO_SHOW_BULB (79 + TRAILING_LOWS)
+#define START_SLICES        3
+#define SLICES_PER_BIT      3
+#define BITS_PER_BULB       26
+
+#define STOP_SLICES       3
+#define SLICES_TO_SHOW_BULB (START_SLICES + (SLICES_PER_BIT * BITS_PER_BULB) + STOP_SLICES)
 
 
 /*----------------------------------------------------------------------------

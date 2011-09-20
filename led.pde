@@ -130,9 +130,12 @@ void write_raw_bulbs(int count, bulb *bulbs)
     for (i = 0; i < count; i++)
         all_bulbs |= bulbs[i].string;
 
-    /* 10 us high */
-    *p |= all_bulbs;
-    INCREMENT_RING_PTR(p);
+    /* start indicator high  */
+    for (i = 0; i < START_SLICES; i++)
+    {
+        *p |= all_bulbs;
+        INCREMENT_RING_PTR(p);
+    }
 
     for (i = 6; i; i--)
     {
@@ -203,12 +206,23 @@ void write_raw_bulbs(int count, bulb *bulbs)
         write_bits(&p, high_bulbs, low_bulbs);
     }
 
-    /* 30 us low */
-    for (i = 0; i < TRAILING_LOWS; i++)
+    /* stop indicator low */
+    for (i = 0; i < STOP_SLICES; i++)
     {
         *p &= ~all_bulbs;
         INCREMENT_RING_PTR(p);
     }
+
+#if HACKME
+{
+    volatile unsigned char *q;
+    for (q = writep; q < p; q++)
+        if (*q)
+            Serial.println("HI");
+        else
+            Serial.println("LO");
+}
+#endif
 
     set_writep(p);
 
@@ -316,21 +330,62 @@ void loop()
             Serial.println((int) readp);
             Serial.print("writep ");
             Serial.println((int) writep);
+            Serial.print("cycles per slice ");
+            Serial.println((int) CYCLES_PER_SLICE);
             return;
         }
 
         else if (data[0] == 0x82)
         {
             unsigned char fakedata[4];
+            int i, r, g, b;
             for (i = 0; i < 36; i++)
             {
                 fakedata[0] = 13;
                 fakedata[1] = 0;
                 fakedata[2] = i % 36;
-                fakedata[3] = MAX_BRIGHT;
+                fakedata[3] = 0xcc;
+                process_bulb(fakedata);
+
+                for (r = 0; r <= 13; r++)
+                    for (g = 0; g <= 13; g++)
+                        for (b = 0; b <= 13; b++)
+                        {
+                            fakedata[0] = b;
+                            fakedata[1] = g << 4 | r;
+                            fakedata[2] = i % 36;
+                            fakedata[3] = 0xcc;
+                            process_bulb(fakedata);
+                        }
+            }
+        }
+
+        else if (data[0] == 0x83)
+        {
+            unsigned char fakedata[4];
+            for (i = 0; i < 36; i++)
+            {
+                fakedata[0] = 0;
+                fakedata[1] = 0;
+                fakedata[2] = i % 36;
+                fakedata[3] = 0;
                 process_bulb(fakedata);
             }
-            Serial.println("Wrote fake blue bulbs");
+            Serial.println("Wrote zero");
+        }
+
+        else if (data[0] == 0x84)
+        {
+            unsigned char fakedata[4];
+            fakedata[0] = 0;
+            fakedata[1] = 13;
+            fakedata[2] = 35;
+            fakedata[3] = MAX_BRIGHT;
+            for (i = 0; i < 6000; i++)
+            {
+                process_bulb(fakedata);
+            }
+            Serial.println("Wrote zero");
         }
 
         else
