@@ -5,8 +5,8 @@ const static unsigned char *ring_fence = ring + sizeof(ring);
 
 #define INCREMENT_RING_PTR(p) { if ((++(p)) == ring_fence) (p) = ring; }
 
-volatile unsigned char *readp = ring;
-volatile unsigned char *writep = ring;
+unsigned char *readp = ring;
+unsigned char *writep = ring;
 
 
 ISR(TIMER1_COMPA_vect)
@@ -14,7 +14,7 @@ ISR(TIMER1_COMPA_vect)
     if (readp != writep)
     {
         PORTB = *readp;
-        //*readp = 0;
+        *readp = 0;
         INCREMENT_RING_PTR(readp);
     }
 }
@@ -57,7 +57,7 @@ void stop_timer1(void)
     SREG = sreg;
 }
 
-void *set_writep(volatile unsigned char *p)
+void *set_writep(unsigned char *p)
 {
     unsigned char sreg;
     /* Save global interrupt flag */
@@ -121,7 +121,7 @@ void write_raw_bulbs(int count, bulb *bulbs)
 
     unsigned char *start;
 
-    while (available() < (SLICES_TO_SHOW_BULB + 1))
+    while (available() < SLICES_TO_SHOW_BULB)
         ;
 
     p = (unsigned char *) writep;
@@ -212,17 +212,6 @@ void write_raw_bulbs(int count, bulb *bulbs)
         *p &= ~all_bulbs;
         INCREMENT_RING_PTR(p);
     }
-
-#if HACKME
-{
-    volatile unsigned char *q;
-    for (q = writep; q < p; q++)
-        if (*q)
-            Serial.println("HI");
-        else
-            Serial.println("LO");
-}
-#endif
 
     set_writep(p);
 
@@ -322,14 +311,6 @@ void loop()
 
         else if (data[0] == 0x81)
         {
-            Serial.print("ring");
-            Serial.println((int) ring);
-            Serial.print("fence");
-            Serial.println((int) ring_fence);
-            Serial.print("readp ");
-            Serial.println((int) readp);
-            Serial.print("writep ");
-            Serial.println((int) writep);
             Serial.print("cycles per slice ");
             Serial.println((int) CYCLES_PER_SLICE);
             return;
@@ -371,6 +352,9 @@ void loop()
                 fakedata[3] = 0;
                 process_bulb(fakedata);
             }
+            while (available() < sizeof(ring))
+                ;
+
             Serial.println("Wrote zero");
         }
 
@@ -385,7 +369,11 @@ void loop()
             {
                 process_bulb(fakedata);
             }
-            Serial.println("Wrote zero");
+
+            while (available() < sizeof(ring))
+                ;
+
+            Serial.println("Wrote 6000 red");
         }
 
         else
