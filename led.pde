@@ -1,12 +1,12 @@
 #include "led.h"
 
-unsigned char ring[SLICES_TO_SHOW_BULB * 10];
-const static unsigned char *ring_fence = ring + sizeof(ring);
+uint8_t ring[SLICES_TO_SHOW_BULB * 10];
+const static uint8_t *ring_fence = ring + sizeof(ring);
 
 #define INCREMENT_RING_PTR(p) { if ((++(p)) == ring_fence) (p) = ring; }
 
-unsigned char *readp = ring;
-unsigned char *writep = ring;
+uint8_t *readp = ring;
+uint8_t *writep = ring;
 
 
 ISR(TIMER1_COMPA_vect)
@@ -21,7 +21,7 @@ ISR(TIMER1_COMPA_vect)
 
 void start_timer1(void)
 {
-    unsigned char sreg;
+    uint8_t sreg;
     /* Save global interrupt flag */
     sreg = SREG;
 
@@ -45,7 +45,7 @@ void start_timer1(void)
 
 void stop_timer1(void)
 {
-    unsigned char sreg;
+    uint8_t sreg;
     /* Save global interrupt flag */
     sreg = SREG;
     /* Disable interrupts */
@@ -57,9 +57,9 @@ void stop_timer1(void)
     SREG = sreg;
 }
 
-void *set_writep(unsigned char *p)
+void set_writep(uint8_t *p)
 {
-    unsigned char sreg;
+    uint8_t sreg;
     /* Save global interrupt flag */
     sreg = SREG;
     /* Disable interrupts */
@@ -71,7 +71,7 @@ void *set_writep(unsigned char *p)
 
 int available(void)
 {
-    unsigned char sreg;
+    uint8_t sreg;
     int a;
     /* Save global interrupt flag */
     sreg = SREG;
@@ -91,7 +91,22 @@ int available(void)
     return a;
 }
 
-void write_bits(unsigned char **p, unsigned char one_strings, unsigned char zero_strings)
+/*----------------------------------------------------------------------------
+**  Be careful - this struct is no for general purpose use.
+**   It's sole use is to provide shift registers for getting
+**   bits to write out to the port.
+**--------------------------------------------------------------------------*/
+typedef struct bulb_struct
+{
+    uint8_t string;
+    uint8_t addr;
+    uint8_t bright;
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+} bulb;
+
+void write_bits(uint8_t **p, uint8_t one_strings, uint8_t zero_strings)
 {
     /* Always starts with low */
     **p &= ~(one_strings | zero_strings);
@@ -111,20 +126,17 @@ void write_bits(unsigned char **p, unsigned char one_strings, unsigned char zero
 
 void write_raw_bulbs(int count, bulb *bulbs)
 {
-    unsigned char *p;
+    uint8_t *p;
     int i, j;
-    int a;
 
-    unsigned char all_bulbs;
-    unsigned char low_bulbs;
-    unsigned char high_bulbs;
-
-    unsigned char *start;
+    uint8_t all_bulbs;
+    uint8_t low_bulbs;
+    uint8_t high_bulbs;
 
     while (available() < SLICES_TO_SHOW_BULB)
         ;
 
-    p = (unsigned char *) writep;
+    p = (uint8_t *) writep;
 
     all_bulbs = 0;
     for (i = 0; i < count; i++)
@@ -243,11 +255,10 @@ void setup()
 **  Note that we store all values left shifted, so they can
 **    just be shifted out for high performance.
 **------------------------------------------------------------------*/
-void process_bulb(unsigned char data[4])
+void process_bulb(uint8_t data[4])
 {
     int more_bulbs = 0;
     bulb *p;
-    int a;
 
     p = &bulbs[bulb_count];
 
@@ -285,8 +296,7 @@ void process_bulb(unsigned char data[4])
 
 void loop()
 {
-    unsigned char data[4];
-    int i;
+    uint8_t data[4];
 
     /*------------------------------------------------------------------------
     **  Pull a command from the serial port, and execute it
@@ -318,7 +328,7 @@ void loop()
 
         else if (data[0] == 0x82)
         {
-            unsigned char fakedata[4];
+            uint8_t fakedata[4];
             int i, r, g, b;
             for (i = 0; i < 36; i++)
             {
@@ -343,7 +353,8 @@ void loop()
 
         else if (data[0] == 0x83)
         {
-            unsigned char fakedata[4];
+            uint8_t fakedata[4];
+            int i;
             for (i = 0; i < 36; i++)
             {
                 fakedata[0] = 0;
@@ -360,7 +371,8 @@ void loop()
 
         else if (data[0] == 0x84)
         {
-            unsigned char fakedata[4];
+            uint8_t fakedata[4];
+            int i;
             fakedata[0] = 0;
             fakedata[1] = 13;
             fakedata[2] = 35;

@@ -21,19 +21,4 @@
 #define SLICES_TO_SHOW_BULB (START_SLICES + (SLICES_PER_BIT * BITS_PER_BULB) + STOP_SLICES)
 
 
-/*----------------------------------------------------------------------------
-**  Be careful - this struct is no for general purpose use.
-**   It's sole use is to provide shift registers for getting
-**   bits to write out to the port.
-**--------------------------------------------------------------------------*/
-typedef struct bulb_struct
-{
-    unsigned char string;
-    unsigned char addr;
-    unsigned char bright;
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
-} bulb;
-
 #define DEFAULT_ARDUINO_SERIAL_PORT "/dev/ttyUSB0"
