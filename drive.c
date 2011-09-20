@@ -138,17 +138,13 @@ int getok(int fd, int max_tries, long max_delay)
 
 void perform_cmd(int fd, int cmd)
 {
-    int i;
     unsigned char out[4];
     memset(out, 0, sizeof(out));
     out[0] = cmd;
     writebuf(fd, out, sizeof(out));
 
-    for (i = 0; i < 500; i++)
-    {
-        usleep(1000);
-        flush_buffer(fd);
-    }
+    if (getok(fd, 5, 1000 * 1000) != 0)
+        fprintf(stderr, "Error getting okay during cmd\n");
 }
 
 void init(int fd)
@@ -181,12 +177,13 @@ void perform_custom(int fd, char *tag)
     int string;
     int addr;
     int red;
+    int i;
     unsigned char out[4];
 
     if (strcmp(tag, "hammer") == 0)
     {
-        build_bulb(out, 0, 0, 0xcc, 0, 15, 0, 0);
-        for (red = 0; red < 6000; red++)
+        build_bulb(out, 0, 0, 0xcc, 0, 0, 13, 0);
+        for (i = 0; i < 6000; i++)
         {
             writebuf(fd, out, 4);
             flush_buffer(fd);
