@@ -8,11 +8,171 @@ const static uint8_t *ring_fence = ring + sizeof(ring);
 uint8_t *readp = ring;
 uint8_t *writep = ring;
 
+#if defined(HACKME)
+uint8_t single_bulb[4 * SLICES_TO_SHOW_BULB] =
+{
+    1,      /* Start */
+    0, 0, 1,    /* Addr 35 is 100011 */
+    0, 1, 1,
+    0, 1, 1,
+    0, 1, 1,
+    0, 0, 1,
+    0, 0, 1,
 
+    0, 0, 1,    /* Bright 0xcc is 11001100 */
+    0, 0, 1,
+    0, 1, 1,
+    0, 1, 1,
+    0, 0, 1,
+    0, 0, 1,
+    0, 1, 1,
+    0, 1, 1,
+
+    0, 1, 1,   /* Blue 0 is 0000 */
+    0, 1, 1,
+    0, 1, 1,
+    0, 1, 1,
+
+    0, 1, 1,   /* Green 0 is 0000 */
+    0, 1, 1,
+    0, 1, 1,
+    0, 1, 1,
+
+    0, 0, 1,   /* Red 13 is 1101 */
+    0, 0, 1,
+    0, 1, 1,
+    0, 0, 1,
+
+    0,0,0,   /* Stop slice */
+
+    1,      /* Start */
+    0, 0, 1,    /* Addr 35 is 100011 */
+    0, 1, 1,
+    0, 1, 1,
+    0, 1, 1,
+    0, 0, 1,
+    0, 0, 1,
+
+    0, 0, 1,    /* Bright 0xcc is 11001100 */
+    0, 0, 1,
+    0, 1, 1,
+    0, 1, 1,
+    0, 0, 1,
+    0, 0, 1,
+    0, 1, 1,
+    0, 1, 1,
+
+    0, 1, 1,   /* Blue 0 is 0000 */
+    0, 1, 1,
+    0, 1, 1,
+    0, 1, 1,
+
+    0, 1, 1,   /* Green 0 is 0000 */
+    0, 1, 1,
+    0, 1, 1,
+    0, 1, 1,
+
+    0, 0, 1,   /* Red 13 is 1101 */
+    0, 0, 1,
+    0, 1, 1,
+    0, 0, 1,
+
+    0,0,0,  /* Stop slice */
+
+    1,      /* Start */
+    0, 0, 1,    /* Addr 35 is 100011 */
+    0, 1, 1,
+    0, 1, 1,
+    0, 1, 1,
+    0, 0, 1,
+    0, 0, 1,
+
+    0, 0, 1,    /* Bright 0xcc is 11001100 */
+    0, 0, 1,
+    0, 1, 1,
+    0, 1, 1,
+    0, 0, 1,
+    0, 0, 1,
+    0, 1, 1,
+    0, 1, 1,
+
+    0, 1, 1,   /* Blue 0 is 0000 */
+    0, 1, 1,
+    0, 1, 1,
+    0, 1, 1,
+
+    0, 1, 1,   /* Green 0 is 0000 */
+    0, 1, 1,
+    0, 1, 1,
+    0, 1, 1,
+
+    0, 0, 1,   /* Red 13 is 1101 */
+    0, 0, 1,
+    0, 1, 1,
+    0, 0, 1,
+
+    0,0,0,  /* Stop slice */
+
+    1,      /* Start */
+    0, 0, 1,    /* Addr 35 is 100011 */
+    0, 1, 1,
+    0, 1, 1,
+    0, 1, 1,
+    0, 0, 1,
+    0, 0, 1,
+
+    0, 0, 1,    /* Bright 0xcc is 11001100 */
+    0, 0, 1,
+    0, 1, 1,
+    0, 1, 1,
+    0, 0, 1,
+    0, 0, 1,
+    0, 1, 1,
+    0, 1, 1,
+
+    0, 1, 1,   /* Blue 0 is 0000 */
+    0, 1, 1,
+    0, 1, 1,
+    0, 1, 1,
+
+    0, 1, 1,   /* Green 0 is 0000 */
+    0, 1, 1,
+    0, 1, 1,
+    0, 1, 1,
+
+    0, 0, 1,   /* Red 13 is 1101 */
+    0, 0, 1,
+    0, 1, 1,
+    0, 0, 1,
+
+    0,0,0   /* Stop slice */
+
+};
+#endif
+
+int mismatch = 0;
 ISR(TIMER1_COMPA_vect)
 {
     if (readp != writep)
     {
+#if defined(HACKME)
+        int i;
+        for (i = 0; i < 10; i++)
+            mismatch++;
+        i = (readp - ring);
+        if (*readp != single_bulb[i])
+        {
+            mismatch = 1;
+#if defined(VERBOSEHACK)
+            Serial.print("Mismatch at ");
+            Serial.print(i);
+            Serial.print(": ");
+            Serial.print((int) *readp);
+            Serial.print(" vs ");
+            Serial.println((int) single_bulb[i]);
+#endif
+        }
+#endif
         PORTB = *readp;
         *readp = 0;
         INCREMENT_RING_PTR(readp);
@@ -255,17 +415,19 @@ void setup()
 **  Note that we store all values left shifted, so they can
 **    just be shifted out for high performance.
 **------------------------------------------------------------------*/
-void process_bulb(uint8_t data[4])
+void process_bulb(const uint8_t *data)
 {
     int more_bulbs = 0;
     bulb *p;
+    uint8_t string;
 
     p = &bulbs[bulb_count];
 
     p->b = data[0] << 4;   /* Grab blue */
 
-    data[0] >>=4;          /* Grab string # */
-    p->string = _BV(data[0]);
+    string = data[0] >> 4;
+
+    p->string = _BV(string);
 
     /*  Green on the high, red on the low */
     p->g = data[1] & 0xF0;
