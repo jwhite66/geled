@@ -207,7 +207,7 @@ void perform_custom(int fd, char *tag)
         {
             for (red = 0; red <= 15; red++)
             {
-                for (addr = 0; addr <= 35; addr++)
+                for (addr = 0; addr <= 34; addr++)
                 {
                     for (string = 0; string <= 5; string++)
                     {
@@ -252,6 +252,7 @@ int main(int argc, char *argv[])
     int green, green_start = 0, green_end = 0;
     int blue, blue_start = 0, blue_end = 0;
     int cmd = 0;
+    int confirm_every = 24;
     unsigned long delay = 100;
     char custom[256] = {0};
     unsigned char out[4];
@@ -261,6 +262,7 @@ int main(int argc, char *argv[])
         {"init",    no_argument,        NULL, 'i'},
         {"verbose", no_argument,        NULL, 'v'},
         {"delay",   required_argument,  NULL, 'd'},
+        {"every",   required_argument,  NULL, 'e'},
         {"custom",  required_argument,  NULL, 'c'},
         {"cmd",     required_argument,  NULL, 'm'},
         {"addr",    required_argument,  NULL, 'a'},
@@ -313,6 +315,9 @@ int main(int argc, char *argv[])
                 break;
             case 'd':
                 delay = atoi(optarg);
+                break;
+            case 'e':
+                confirm_every = atoi(optarg);
                 break;
             case 'm':
                 cmd = atoi(optarg);
@@ -376,6 +381,13 @@ int main(int argc, char *argv[])
 
                             if (delay > 0)
                                 usleep(delay);
+
+                            if (confirm_every > 0)
+                                if (writes % confirm_every == 0)
+                                {
+                                    if (getok(fd, 1, 1000 * 1000) < 0)
+                                        fprintf(stderr, "Error:  did not get closing ack\n");
+                                }
                         }
     }
 

@@ -112,12 +112,11 @@ void write_bits(uint8_t **p, uint8_t one_strings, uint8_t zero_strings)
     **p &= ~(one_strings | zero_strings);
     INCREMENT_RING_PTR(*p);
 
-    /* 2 slices of low for one, 2 of high for off */
+    /* 3 slices of low for one, 3 of high for off */
     **p &= ~one_strings;
     **p |= zero_strings;
     INCREMENT_RING_PTR(*p);
 
-    /* 2 slices of low for one, 2 of high for off */
     **p &= ~one_strings;
     **p |= zero_strings;
     INCREMENT_RING_PTR(*p);
@@ -336,11 +335,11 @@ void loop()
         {
             uint8_t fakedata[4];
             int i, r, g, b;
-            for (i = 0; i < 36; i++)
+            for (i = 0; i < 35; i++)
             {
                 fakedata[0] = 13;
                 fakedata[1] = 0;
-                fakedata[2] = i % 36;
+                fakedata[2] = i % 35;
                 fakedata[3] = 0xcc;
                 process_bulb(fakedata);
 
@@ -350,7 +349,7 @@ void loop()
                         {
                             fakedata[0] = b;
                             fakedata[1] = g << 4 | r;
-                            fakedata[2] = i % 36;
+                            fakedata[2] = i % 35;
                             fakedata[3] = 0xcc;
                             process_bulb(fakedata);
                         }
@@ -361,11 +360,11 @@ void loop()
         {
             uint8_t fakedata[4];
             int i;
-            for (i = 0; i < 36; i++)
+            for (i = 0; i < 35; i++)
             {
                 fakedata[0] = 0;
                 fakedata[1] = 0;
-                fakedata[2] = i % 36;
+                fakedata[2] = i % 35;
                 fakedata[3] = 0;
                 process_bulb(fakedata);
             }
@@ -381,7 +380,7 @@ void loop()
             int i;
             fakedata[0] = 0;
             fakedata[1] = 13;
-            fakedata[2] = 35;
+            fakedata[2] = 34;
             fakedata[3] = MAX_BRIGHT;
             for (i = 0; i < 6000; i++)
             {
