@@ -1,0 +1,20 @@
+* Set up licensing (GPL v3)
+* Provide a flash ram setting to perform init on boot
+* Provide a command to store a compressed pattern into flash ram
+* Provide a setting to play a compressed pattern
+  - Optionally on boot
+
+
+--- Long Term ---
+We should be able to control up to 12 strings by adding the
+  upper six pins of port D.
+If I can figure out how to keep Tone.cpp out of the .pde build,
+  we could switch to Timer2
+
+
+--- Never ---
+Right now, we lock step the strings; if you're going to write to
+  more than 1 string, you have to do them at the same time.  That is
+  not theoretically required; the pins could be inter mingled in the
+  ring buffer.  You could theoretically avoid that by having a slightly
+  more sophisticated available()/writep algorithm.

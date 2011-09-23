@@ -22,3 +22,36 @@
 
 
 #define DEFAULT_ARDUINO_SERIAL_PORT "/dev/ttyUSB0"
+
+/*----------------------------------------------------------------------------
+**  Define the structure of a 4 byte on wire bulb sequence.
+**    It's generally:
+**      flags address | blue string | green red | bright
+**  where flags are 2 bits, address 6, blue/string/green/red are
+**  each 4 bits each.
+**--------------------------------------------------------------------------*/
+#define BULB_FLAG_COMMAND   0x80
+#define BULB_FLAG_COMBINE   0x40
+
+#define BULB_FLAG_ADDRESS(b)((b)[0])
+#define BULB_BLUE_STRING(b) ((b)[1])
+#define BULB_GREEN_RED(b)   ((b)[2])
+#define BULB_BRIGHT(b)      ((b)[3])
+
+#define IS_COMMAND(b)       (((b)[0] & BULB_FLAG_COMMAND) == BULB_FLAG_COMMAND)
+#define IS_COMBINED(b)      (((b)[0] & BULB_FLAG_COMBINE) == BULB_FLAG_COMBINE)
+
+#define BULB_ADDRESS(b)     (BULB_FLAG_ADDRESS(b) & 0x3F)
+#define BULB_STRING(b)      (BULB_BLUE_STRING(b)  & 0xF)
+#define BULB_BLUESHIFT(b)   (BULB_BLUE_STRING(b)  & 0xF0)
+#define BULB_GREENSHIFT(b)  (BULB_GREEN_RED(b) & 0xF0)
+#define BULB_REDSHIFT(b)    (BULB_GREEN_RED(b) << 4)
+
+/*----------------------------------------------------------------------------
+**  Command list
+**--------------------------------------------------------------------------*/
+#define COMMAND_ACK         (BULB_FLAG_COMMAND | 1)
+#define COMMAND_INIT        (BULB_FLAG_COMMAND | 2)
+#define COMMAND_STATUS      (BULB_FLAG_COMMAND | 3)
+#define COMMAND_CLEAR       (BULB_FLAG_COMMAND | 4)
+#define COMMAND_CHASE       (BULB_FLAG_COMMAND | 5)

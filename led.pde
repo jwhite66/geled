@@ -1,5 +1,24 @@
+/*----------------------------------------------------------------------------
+**  led.pde
+**      Driver for running GE Color Effects lights on an Amtel328p board.
+**  
+**  Features:
+**     -  Can drive up to six strings by attaching them to port b (pins 8-13)
+**     -  Gets commands via serial port
+**
+**  License:
+**      LGPL v3
+**
+**--------------------------------------------------------------------------*/
 #include "led.h"
 
+
+/*----------------------------------------------------------------------------
+**  Notes on Memory:
+**      The 328 has 2K of RAM, 512 bytes of EEPROM, and 32 K of Flash RAM.
+**  That makes the size of this ring buffer crucial, as it uses up the
+**  bulk of available ram.
+**--------------------------------------------------------------------------*/
 uint8_t ring[SLICES_TO_SHOW_BULB * 10];
 const static uint8_t *ring_fence = ring + sizeof(ring);
 
@@ -9,6 +28,11 @@ uint8_t *readp = ring;
 uint8_t *writep = ring;
 
 
+/*----------------------------------------------------------------------------
+**  Ring timer code.  This interrupt vector just pushes bytes from the ring
+**      buffer out to Port B, thus driving the lights.  The complex bit
+**      is staging the ring buffer just right.
+**--------------------------------------------------------------------------*/
 ISR(TIMER1_COMPA_vect)
 {
     if (readp != writep)
@@ -92,18 +116,26 @@ int available(void)
 }
 
 /*----------------------------------------------------------------------------
-**  Be careful - this struct is no for general purpose use.
-**   It's sole use is to provide shift registers for getting
-**   bits to write out to the port.
+**  Bulb management code
+**      This code will take a 4 byte expression of a bulb and
+**  get it into the ring buffer in the right order.
+**      There is one slight optimization:  we can write orders
+**  for up to 6 strings simultaneously.  So we will cache a bulb
+**  (on BULB_FLAG_COMBINE) and send them all at once if so requested.
+**--------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------
+**  Be careful - this struct is not for general purpose use.
+**   It's sole use is to provide preshifted bits to write out to the port.
 **--------------------------------------------------------------------------*/
 typedef struct bulb_struct
 {
-    uint8_t string;
-    uint8_t addr;
+    uint8_t stringmask;
+    uint8_t addrshift;
     uint8_t bright;
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
+    uint8_t redshift;
+    uint8_t greenshift;
+    uint8_t blueshift;
 } bulb;
 
 void write_bits(uint8_t **p, uint8_t one_strings, uint8_t zero_strings)
@@ -112,7 +144,7 @@ void write_bits(uint8_t **p, uint8_t one_strings, uint8_t zero_strings)
     **p &= ~(one_strings | zero_strings);
     INCREMENT_RING_PTR(*p);
 
-    /* 3 slices of low for one, 3 of high for off */
+    /* 3 slices of low for one, 3 of high for zero */
     **p &= ~one_strings;
     **p |= zero_strings;
     INCREMENT_RING_PTR(*p);
@@ -143,7 +175,7 @@ void write_raw_bulbs(int count, bulb *bulbs)
 
     all_bulbs = 0;
     for (i = 0; i < count; i++)
-        all_bulbs |= bulbs[i].string;
+        all_bulbs |= bulbs[i].stringmask;
 
     /* start indicator high  */
     for (i = 0; i < START_SLICES; i++)
@@ -152,71 +184,77 @@ void write_raw_bulbs(int count, bulb *bulbs)
         INCREMENT_RING_PTR(p);
     }
 
+    /* Address bits */
     for (i = 6; i; i--)
     {
         high_bulbs = low_bulbs = 0;
         for (j = 0; j < count; j++)
         {
-            if (bulbs[j].addr & 0x80)
-                high_bulbs |= bulbs[j].string;
+            if (bulbs[j].addrshift & 0x80)
+                high_bulbs |= bulbs[j].stringmask;
             else
-                low_bulbs  |= bulbs[j].string;
-            bulbs[j].addr <<= 1;
+                low_bulbs  |= bulbs[j].stringmask;
+            bulbs[j].addrshift <<= 1;
         }
         write_bits(&p, high_bulbs, low_bulbs);
     }
+
+    /* Bright bits */
     for (i = 8; i; i--)
     {
         high_bulbs = low_bulbs = 0;
         for (j = 0; j < count; j++)
         {
             if (bulbs[j].bright & 0x80)
-                high_bulbs |= bulbs[j].string;
+                high_bulbs |= bulbs[j].stringmask;
             else
-                low_bulbs  |= bulbs[j].string;
+                low_bulbs  |= bulbs[j].stringmask;
             bulbs[j].bright <<= 1;
         }
         write_bits(&p, high_bulbs, low_bulbs);
     }
 
+    /* Blue bits */
     for (i = 4; i; i--)
     {
         high_bulbs = low_bulbs = 0;
         for (j = 0; j < count; j++)
         {
-            if (bulbs[j].b & 0x80)
-                high_bulbs |= bulbs[j].string;
+            if (bulbs[j].blueshift & 0x80)
+                high_bulbs |= bulbs[j].stringmask;
             else
-                low_bulbs  |= bulbs[j].string;
-            bulbs[j].b <<= 1;
+                low_bulbs  |= bulbs[j].stringmask;
+            bulbs[j].blueshift <<= 1;
         }
         write_bits(&p, high_bulbs, low_bulbs);
     }
 
+    /* Green bits */
     for (i = 4; i; i--)
     {
         high_bulbs = low_bulbs = 0;
         for (j = 0; j < count; j++)
         {
-            if (bulbs[j].g & 0x80)
-                high_bulbs |= bulbs[j].string;
+            if (bulbs[j].greenshift & 0x80)
+                high_bulbs |= bulbs[j].stringmask;
             else
-                low_bulbs  |= bulbs[j].string;
-            bulbs[j].g <<= 1;
+                low_bulbs  |= bulbs[j].stringmask;
+            bulbs[j].greenshift <<= 1;
         }
         write_bits(&p, high_bulbs, low_bulbs);
     }
 
+    /* Red */
     for (i = 4; i; i--)
     {
         high_bulbs = low_bulbs = 0;
         for (j = 0; j < count; j++)
         {
-            if (bulbs[j].r & 0x80)
-                high_bulbs |= bulbs[j].string;
+            if (bulbs[j].redshift & 0x80)
+                high_bulbs |= bulbs[j].stringmask;
             else
-                low_bulbs  |= bulbs[j].string;
-            bulbs[j].r <<= 1;
+                low_bulbs  |= bulbs[j].stringmask;
+            bulbs[j].redshift <<= 1;
         }
         write_bits(&p, high_bulbs, low_bulbs);
     }
@@ -232,8 +270,133 @@ void write_raw_bulbs(int count, bulb *bulbs)
 
 }
 
-static bulb bulbs[STRING_COUNT];
-static int bulb_count = 0;
+void process_bulb(const uint8_t *data)
+{
+    static bulb bulbs[STRING_COUNT];
+    static int bulb_count = 0;
+
+    bulb *p;
+
+    p = &bulbs[bulb_count];
+
+    p->addrshift = BULB_ADDRESS(data) << 2;
+    p->stringmask = _BV(BULB_STRING(data));
+    p->blueshift = BULB_BLUESHIFT(data);
+    p->greenshift = BULB_GREENSHIFT(data);
+    p->redshift = BULB_REDSHIFT(data);
+    p->bright = BULB_BRIGHT(data);
+    if (p->bright > MAX_BRIGHT)
+        p->bright = MAX_BRIGHT;
+
+    if (++bulb_count >= STRING_COUNT || (! IS_COMBINED(data)))
+    {
+        write_raw_bulbs(bulb_count, bulbs);
+        bulb_count = 0;
+    }
+}
+
+
+/*----------------------------------------------------------------------------
+**  init
+**      Send the sequence to initialize the strings.
+**--------------------------------------------------------------------------*/
+void init(unsigned int pause)
+{
+    int string;
+    int addr;
+    uint8_t out[4];
+
+    for (addr = 0; addr < ADDR_COUNT; addr++)
+    {
+        for (string = 0; string < STRING_COUNT; string++)
+        {
+            BULB_FLAG_ADDRESS(out) = addr;
+            if (string < STRING_COUNT - 1)
+                BULB_FLAG_ADDRESS(out) |= BULB_FLAG_COMBINE;
+            BULB_BLUE_STRING(out) = string;
+            BULB_GREEN_RED(out) = 0;
+            BULB_BRIGHT(out) = 0;
+            process_bulb(out);
+        }
+        if (pause > 0)
+            delay(pause);
+    }
+}
+
+/*----------------------------------------------------------------------------
+**  chase
+**      Send a pattern along the strings by way of testing
+**--------------------------------------------------------------------------*/
+void chase(void)
+{
+    int string;
+    int addr;
+    int red, green, blue;
+    int bright;
+    uint8_t out[4];
+
+    for (addr = 0; addr < ADDR_COUNT; addr++)
+    {
+        for (bright = MAX_BRIGHT; bright >= 0; bright--)
+            for (string = 0; string < STRING_COUNT; string++)
+            {
+                red = green = blue = 0;
+                switch(string)
+                {
+                    case 0:  red = 13; break;
+                    case 1:  green = 13; break;
+                    case 2:  blue = 13; break;
+                    case 3:  blue = 13; red = 13; break;
+                    case 4:  green = 13; red = 13; break;
+                    case 5:  blue = 13; green = 13; red = 13; break;
+                }
+                BULB_FLAG_ADDRESS(out) = addr;
+                if (string < STRING_COUNT - 1)
+                    BULB_FLAG_ADDRESS(out) |= BULB_FLAG_COMBINE;
+                BULB_BLUE_STRING(out) = string | (blue << 4);
+                BULB_GREEN_RED(out) = (green << 4) | red;
+                BULB_BRIGHT(out) = bright;
+                process_bulb(out);
+            }
+    }
+}
+
+void process_command(const uint8_t *data)
+{
+    switch(BULB_FLAG_ADDRESS(data))
+    {
+        case COMMAND_ACK:
+            /*----------------------------------------------------------------
+            **  Command 1:  Echo.  We just return the next 3 bytes
+            **--------------------------------------------------------------*/
+            Serial.print(data[1]);
+            Serial.print(data[2]);
+            Serial.print(data[3]);
+            break;
+
+        case COMMAND_INIT:
+            init(10);
+            break;
+
+        case COMMAND_STATUS:
+            Serial.print("cycles per slice ");
+            Serial.println((int) CYCLES_PER_SLICE);
+            break;
+
+        case COMMAND_CLEAR:
+            init(0);
+            break;
+
+        case COMMAND_CHASE:
+            chase();
+            break;
+
+        default:
+            Serial.print("Unknown command: ");
+            Serial.println((int) BULB_FLAG_ADDRESS(data));
+
+    }
+}
 
 /*----------------------------------------------------------------------------
 **  Initial setup
@@ -251,52 +414,6 @@ void setup()
     DDRB = ALL_STRINGS_MASK;
 }
 
-/*--------------------------------------------------------------------
-**  All other commands are now giving us a bulb to light.
-**      The general structure is:
-**   cmd str(3) blue(4)  |  g(4) r(4)  |  more_bulbs unused addr(6) | bright
-**  Note that we store all values left shifted, so they can
-**    just be shifted out for high performance.
-**------------------------------------------------------------------*/
-void process_bulb(const uint8_t *data)
-{
-    int more_bulbs = 0;
-    bulb *p;
-    uint8_t string;
-
-    p = &bulbs[bulb_count];
-
-    p->b = data[0] << 4;   /* Grab blue */
-
-    string = data[0] >> 4;
-
-    p->string = _BV(string);
-
-    /*  Green on the high, red on the low */
-    p->g = data[1] & 0xF0;
-    p->r = data[1] << 4;
-
-    /*--------------------------------------------------------------------
-    **  We can set up to STRING_COUNT worth of bulbs to write for each
-    **      time, although note that you cannot write the same string
-    **      twice; it'll just fail.
-    **------------------------------------------------------------------*/
-    if (data[2] & 0x80)
-        more_bulbs = 1;
-
-    p->addr = data[2] << 2;
-
-    /* Bright is nice and simple, but let's protect things */
-    p->bright = data[3];
-    if (p->bright > MAX_BRIGHT)
-        p->bright = MAX_BRIGHT;
-
-    if (++bulb_count >= STRING_COUNT || (! more_bulbs))
-    {
-        write_raw_bulbs(bulb_count, bulbs);
-        bulb_count = 0;
-    }
-}
 
 
 void loop()
@@ -313,86 +430,8 @@ void loop()
         data[2] = Serial.read();
         data[3] = Serial.read();
 
-        /*--------------------------------------------------------------------
-        **  Command 1:  Echo.  We just return the next 3 bytes
-        **------------------------------------------------------------------*/
-        if (data[0] == 0x80)
-        {
-            Serial.print(data[1]);
-            Serial.print(data[2]);
-            Serial.print(data[3]);
-            return;
-        }
-
-        else if (data[0] == 0x81)
-        {
-            Serial.print("cycles per slice ");
-            Serial.println((int) CYCLES_PER_SLICE);
-            return;
-        }
-
-        else if (data[0] == 0x82)
-        {
-            uint8_t fakedata[4];
-            int i, r, g, b;
-            for (i = 0; i < 35; i++)
-            {
-                fakedata[0] = 13;
-                fakedata[1] = 0;
-                fakedata[2] = i % 35;
-                fakedata[3] = 0xcc;
-                process_bulb(fakedata);
-
-                for (r = 0; r <= 13; r++)
-                    for (g = 0; g <= 13; g++)
-                        for (b = 0; b <= 13; b++)
-                        {
-                            fakedata[0] = b;
-                            fakedata[1] = g << 4 | r;
-                            fakedata[2] = i % 35;
-                            fakedata[3] = 0xcc;
-                            process_bulb(fakedata);
-                        }
-            }
-        }
-
-        else if (data[0] == 0x83)
-        {
-            uint8_t fakedata[4];
-            int i;
-            for (i = 0; i < 35; i++)
-            {
-                fakedata[0] = 0;
-                fakedata[1] = 0;
-                fakedata[2] = i % 35;
-                fakedata[3] = 0;
-                process_bulb(fakedata);
-            }
-            while (available() < sizeof(ring))
-                ;
-
-            Serial.println("Wrote zero");
-        }
-
-        else if (data[0] == 0x84)
-        {
-            uint8_t fakedata[4];
-            int i;
-            fakedata[0] = 0;
-            fakedata[1] = 13;
-            fakedata[2] = 34;
-            fakedata[3] = MAX_BRIGHT;
-            for (i = 0; i < 6000; i++)
-            {
-                process_bulb(fakedata);
-            }
-
-            while (available() < sizeof(ring))
-                ;
-
-            Serial.println("Wrote 6000 red");
-        }
-
+        if (IS_COMMAND(data))
+            process_command(data);
         else
             process_bulb(data);
     }

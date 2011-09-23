@@ -10,6 +10,8 @@
 #include "led.h"
 
 int g_verbose = 0;
+long g_writes = 0;
+int g_confirm_every = 24;
 
 
 int open_port(char *port_name)
@@ -46,6 +48,17 @@ int open_port(char *port_name)
     return (fd);
 }
 
+void flush_buffer(int fd)
+{
+    int rc;
+    char buf[2048];
+    memset(buf, 0, sizeof(buf));
+    rc = read(fd, buf, sizeof(buf));
+    if (rc > 0)
+        write(STDOUT_FILENO, buf, rc);
+}
+
+
 int findone(int fd, int target, long max_usec)
 {
     fd_set readfds;
@@ -76,50 +89,10 @@ int findone(int fd, int target, long max_usec)
     return -1;
 }
 
-
-void writebuf(int fd, unsigned char *out, int size)
-{
-    int rc;
-    while (size > 0)
-    {
-        rc = write(fd, out, size);
-        if (rc < 0)
-        {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                continue;
-
-            perror("writebuf: ");
-            return;
-        }
-
-        out += rc;
-        size -= rc;
-    }
-}
-
-void build_bulb(unsigned char *out, unsigned char string, unsigned char addr, 
-            unsigned char bright, unsigned char r, unsigned char g, unsigned char b, int more_bulbs)
-{
-    *out++ = (b & 0x0F) | (string << 4);
-    *out++ = (g << 4) | (r & 0xF);
-    *out++ = (more_bulbs ? 0x80 : 0x00) | (addr & 0x3F);
-    *out++ = bright;
-}
-
-void flush_buffer(int fd)
-{
-    int rc;
-    char buf[32000];
-    memset(buf, 0, sizeof(buf));
-    rc = read(fd, buf, sizeof(buf));
-    if (rc > 0)
-        write(STDOUT_FILENO, buf, rc);
-}
-
-
+void writebuf(int fd, unsigned char *out, int size);
 int getok(int fd, int max_tries, long max_delay)
 {
-    unsigned char aok[4] = {0x80,'O','K','\n'};
+    unsigned char aok[4] = {COMMAND_ACK,'O','K','\n'};
     int i;
 
     for (i = 0; i < max_tries; i++)
@@ -136,43 +109,62 @@ int getok(int fd, int max_tries, long max_delay)
 
 }
 
+
+void writebuf(int fd, unsigned char *out, int size)
+{
+    int rc;
+    if (size == 4)
+        g_writes++;
+
+    while (size > 0)
+    {
+        rc = write(fd, out, size);
+        if (rc < 0)
+        {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                continue;
+
+            perror("writebuf: ");
+            return;
+        }
+
+        out += rc;
+        size -= rc;
+    }
+
+    if (g_confirm_every > 0 && size == 4)
+        if (g_writes % g_confirm_every == 0)
+        {
+            if (getok(fd, 1, 1000 * 1000) < 0)
+                fprintf(stderr, "Error:  did not get periodic ack\n");
+        }
+}
+
+void build_bulb(unsigned char *out, unsigned char string, unsigned char addr,
+            unsigned char bright, unsigned char r, unsigned char g, unsigned char b, int more_bulbs)
+{
+    BULB_FLAG_ADDRESS(out) = addr;
+    if (more_bulbs)
+        BULB_FLAG_ADDRESS(out) |= BULB_FLAG_COMBINE;
+    BULB_BLUE_STRING(out) = (b << 4) | string;
+    BULB_GREEN_RED(out) = (g << 4) | (r & 0xF);
+    BULB_BRIGHT(out) = bright;
+}
+
+
 void perform_cmd(int fd, int cmd)
 {
     unsigned char out[4];
     memset(out, 0, sizeof(out));
-    out[0] = cmd;
+
+    BULB_FLAG_ADDRESS(out) = cmd;
     writebuf(fd, out, sizeof(out));
 
     if (getok(fd, 5, 1000 * 1000) != 0)
         fprintf(stderr, "Error getting okay during cmd\n");
 }
 
-void init(int fd)
-{
-    int string;
-    int addr;
-    unsigned char out[4];
-
-    if (g_verbose)
-        printf("Initializing strings..");
-
-    for (addr = 0; addr < ADDR_COUNT; addr++)
-    {
-        for (string = 0; string < STRING_COUNT; string++)
-        {
-            build_bulb(out, string, addr, 0, 0, 0, 0, string == (STRING_COUNT - 1) ? 0 : 1);
-            writebuf(fd, out, 4);
-        }
-        if (getok(fd, 1, 100 * 1000) != 0)
-            fprintf(stderr, "Error getting okay during init\n");
-    }
-
-    if (g_verbose)
-        printf("done.\n");
-
-}
-
-void perform_custom(int fd, char *tag)
+int perform_custom(int fd, char *tag)
 {
     int string;
     int addr;
@@ -187,7 +179,11 @@ void perform_custom(int fd, char *tag)
         {
             writebuf(fd, out, 4);
             flush_buffer(fd);
+            if (getok(fd, 1, 1000 * 1000) < 0)
+                fprintf(stderr, "Error:  did not get closing ack\n");
         }
+
+        return 0;
     }
 
     if (strcmp(tag, "one") == 0)
@@ -199,6 +195,7 @@ void perform_custom(int fd, char *tag)
             flush_buffer(fd);
             usleep(1000);
         }
+        return 0;
     }
 
     if (strcmp(tag, "red") == 0)
@@ -217,15 +214,28 @@ void perform_custom(int fd, char *tag)
                 }
             }
         }
+        return 0;
     }
+
+    return -1;
 }
 
 void usage(char *argv0)
 {
-    printf("%s: [--init] [--verbose] [--delay=usecs] [--custom=tag] [--cmd=n]\n", argv0);
+    printf("%s: [--verbose] [--every=n] [cmd1] [...] [cmdn]\n", argv0);
     printf("%*.*s", strlen(argv0), strlen(argv0), " ");
-    printf( "     [--string=n[-m]] [--addr=n[-m]] [--bright=n[-m]] [--red=n[-m]] [--green=n[-m]] [--blue=n[-m]]\n");
     printf("Drive a string of GE lights connected to an Arduino.\n");
+    printf("\nCommand can be one of:\n");
+    printf("\n  bulb:  Write bulbs as per specificed colors and ranges (default)\n");
+    printf("  init:    Initialize the bulbs\n");
+    printf("  status:  Print a sort status message\n");
+    printf("  clear:   Clear the bulbs on all strings\n");
+    printf("\nAdditional options that apply to bulb mode:\n");
+    printf("    [--delay=usecs]\n");
+    printf("    [--string=n[-m]] [--addr=n[-m]] [--bright=n[-m]]\n");
+    printf("    [--red=n[-m]] [--green=n[-m]] [--blue=n[-m]]\n");
+    printf("--every indicates how many bulbs are sent before an ack is required.  Default 24.\n");
+    printf("  This prevents over driving the serial line.\n");
 }
 
 void parse_range(char *r, int *begin, int *end)
@@ -243,8 +253,8 @@ int main(int argc, char *argv[])
     int fd;
     char *sp;
     int c;
+    int i;
     int perform_init = 0;
-    long writes = 0;
     int addr, addr_start = 0, addr_end = 0;
     int string, string_start = 0, string_end = 0;
     int bright, bright_start = MAX_BRIGHT, bright_end = MAX_BRIGHT;
@@ -252,19 +262,17 @@ int main(int argc, char *argv[])
     int green, green_start = 0, green_end = 0;
     int blue, blue_start = 0, blue_end = 0;
     int cmd = 0;
-    int confirm_every = 24;
+    int write_bulbs = 0;
     unsigned long delay = 100;
     char custom[256] = {0};
     unsigned char out[4];
 
     static struct option long_options[] =
     {
-        {"init",    no_argument,        NULL, 'i'},
         {"verbose", no_argument,        NULL, 'v'},
         {"delay",   required_argument,  NULL, 'd'},
         {"every",   required_argument,  NULL, 'e'},
         {"custom",  required_argument,  NULL, 'c'},
-        {"cmd",     required_argument,  NULL, 'm'},
         {"addr",    required_argument,  NULL, 'a'},
         {"string",  required_argument,  NULL, 's'},
         {"bright",  required_argument,  NULL, 'b'},
@@ -283,7 +291,7 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        c = getopt_long(argc, argv, "iva:s:b:r:g:l:d:c:", long_options, NULL);
+        c = getopt_long(argc, argv, "vd:e:c:a:s:b:r:g:l:", long_options, NULL);
         if (c == -1)
             break;
 
@@ -317,7 +325,7 @@ int main(int argc, char *argv[])
                 delay = atoi(optarg);
                 break;
             case 'e':
-                confirm_every = atoi(optarg);
+                g_confirm_every = atoi(optarg);
                 break;
             case 'm':
                 cmd = atoi(optarg);
@@ -338,6 +346,9 @@ int main(int argc, char *argv[])
     if (!sp)
         sp = DEFAULT_ARDUINO_SERIAL_PORT;
 
+    if (g_verbose)
+        printf("Connecting to %s...\n", sp);
+
     fd = open_port(sp);
     if (fd <= 0)
     {
@@ -354,17 +365,39 @@ int main(int argc, char *argv[])
 
     flush_buffer(fd);
 
-    if (perform_init)
-        init(fd);
-    else if (cmd > 0)
+    if (g_verbose)
+        printf("..connected\n");
+
+    /*------------------------------------------------------------------------
+    **  Look for and perform commands
+    **----------------------------------------------------------------------*/
+    for (i = optind; i  < argc; i++)
     {
-        perform_cmd(fd, cmd);
-        if (g_verbose)
-            printf("Action done\n");
+        if (strcmp(argv[i], "init") == 0)
+            perform_cmd(fd, COMMAND_INIT);
+        else if (strcmp(argv[i], "clear") == 0)
+            perform_cmd(fd, COMMAND_CLEAR);
+        else if (strcmp(argv[i], "status") == 0)
+            perform_cmd(fd, COMMAND_STATUS);
+        else if (strcmp(argv[i], "chase") == 0)
+            perform_cmd(fd, COMMAND_CHASE);
+        else if (strcmp(argv[i],"bulb") == 0)
+            write_bulbs = 1;
+        else if (perform_custom(fd, argv[i]) != 0)
+        {
+            fprintf(stderr, "Error:  unrecognized command '%s'\n", argv[i]);
+            usage(argv[0]);
+            return -1;
+        }
     }
-    else if (strlen(custom) > 0)
-        perform_custom(fd, custom);
-    else
+
+    if (optind >= argc)
+        write_bulbs = 1;
+
+    if (cmd > 0)
+        perform_cmd(fd, cmd);
+
+    if (write_bulbs)
     {
         for (addr = addr_start; addr <= addr_end; addr++)
             for (bright = bright_start; bright <= bright_end; bright++)
@@ -376,18 +409,11 @@ int main(int argc, char *argv[])
                             {
                                 build_bulb(out, string, addr, bright, red, green, blue, string == string_end ? 0 : 1);
                                 writebuf(fd, out, 4);
-                                writes++;
                             }
 
                             if (delay > 0)
                                 usleep(delay);
 
-                            if (confirm_every > 0)
-                                if (writes % confirm_every == 0)
-                                {
-                                    if (getok(fd, 1, 1000 * 1000) < 0)
-                                        fprintf(stderr, "Error:  did not get closing ack\n");
-                                }
                         }
     }
 
@@ -399,7 +425,7 @@ int main(int argc, char *argv[])
     close(fd);
 
     if (g_verbose)
-        printf("Wrote %ld bulbs\n", writes);
+        printf("Wrote %ld bulbs\n", g_writes);
 
     return 0;
 }
