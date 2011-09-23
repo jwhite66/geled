@@ -11,6 +11,7 @@
 **
 **--------------------------------------------------------------------------*/
 #include "led.h"
+#include "message.h"
 
 
 /*----------------------------------------------------------------------------
@@ -295,6 +296,80 @@ void process_bulb(const uint8_t *data)
     }
 }
 
+/*----------------------------------------------------------------------------
+** Message scrolling code
+**--------------------------------------------------------------------------*/
+#define SCROLL_INTERVAL 250
+uint8_t *g_scroll_pos = g_message_bits;
+int g_scroll_width = 5;
+unsigned long g_next_scroll = 0;
+
+uint8_t g_scrolling = 0;
+
+void scroll_display(void)
+{
+    int i;
+    uint8_t *p;
+    bulb pixel;
+    int x, y;
+    int shift;
+
+    p = g_scroll_pos;
+    for (x = 0; x < g_scroll_width; x++)
+    {
+        for (y = 0; y < MESSAGE_ROWS; y++)
+        {
+            int addr;
+            if (y % 2 == 0)
+            {
+                shift = 1 << y;
+                addr = (x * MESSAGE_ROWS) + y;
+            }
+            else
+            {
+                shift = 1 << (MESSAGE_ROWS - y - 1);
+                addr = (x * MESSAGE_ROWS) + (MESSAGE_ROWS - y) - 1;
+            }
+
+            if (*p & shift)
+                pixel.bright = MAX_BRIGHT;
+            else
+                pixel.bright = 0;
+
+            pixel.stringmask = _BV(0);
+            pixel.addrshift = addr << 2;
+            pixel.redshift = 0xf0;
+            pixel.greenshift = 0;
+            pixel.blueshift = 0;
+
+            write_raw_bulbs(1, &pixel);
+        }
+
+        if (((++p) - g_message_bits) >= sizeof(g_message_bits))
+            p = g_message_bits;
+
+    }
+}
+
+void scroll_advance(int howmuch)
+{
+    while (howmuch-- > 0)
+        if ((++g_scroll_pos) - g_message_bits >= sizeof(g_message_bits))
+            g_scroll_pos = g_message_bits;
+}
+
+void check_scroll()
+{
+    unsigned long now = millis();
+
+    if (now >= g_next_scroll || now <= SCROLL_INTERVAL)
+    {
+        g_next_scroll = now + SCROLL_INTERVAL;
+        scroll_advance(1);
+        scroll_display();
+    }
+
+}
 
 /*----------------------------------------------------------------------------
 **  init
@@ -391,6 +466,17 @@ void process_command(const uint8_t *data)
             chase();
             break;
 
+        case COMMAND_SCROLL_DISPLAY:
+            g_scrolling = ! g_scrolling;
+            if (g_scrolling)
+            {
+                scroll_display();
+                g_next_scroll = millis() + SCROLL_INTERVAL;
+            }
+            else
+                init(0);
+            break;
+
         default:
             Serial.print("Unknown command: ");
             Serial.println((int) BULB_FLAG_ADDRESS(data));
@@ -419,6 +505,9 @@ void setup()
 void loop()
 {
     uint8_t data[4];
+
+    if (g_scrolling)
+        check_scroll();
 
     /*------------------------------------------------------------------------
     **  Pull a command from the serial port, and execute it

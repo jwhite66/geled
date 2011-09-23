@@ -48,14 +48,22 @@ LDFLAGS       = -mmcu=$(MCU) -lm -Wl,--gc-sections -Os
 
 OBJECTS=generated_led.o Print.o HardwareSerial.o wiring.o main.o
 
-all: $(TARGET_HEX) drive
+all: $(TARGET_HEX) drive makemap
+
+message.h: Makefile makemap
+	./makemap elegante_pixel.ttf "HELLO WORLD." > message.h
 
 generated_led.cpp: led.pde led.h
 	@echo '#include <WProgram.h>' > $@
 	@cat $< >>$@
 
+generated_led.o: led.pde led.h message.h
+
 drive: drive.c led.h
 	gcc -Wall -o $@ $<
+
+makemap: makemap.c led.h
+	gcc -Wall -o $@ -I /usr/include/freetype2 $< -lfreetype -lm
 
 
 led.elf: $(OBJECTS)
@@ -67,7 +75,6 @@ Print.o: $(ARDUINO_CORE_PATH)/Print.cpp
 HardwareSerial.o: $(ARDUINO_CORE_PATH)/HardwareSerial.cpp
 wiring.o: $(ARDUINO_CORE_PATH)/wiring.c
 main.o: $(ARDUINO_CORE_PATH)/main.cpp
-led.o: led.cpp
 
 upload:		reset raw_upload
 
@@ -87,4 +94,4 @@ reset:
 		$$STTYF $(ARD_PORT) -hupcl 
 
 clean:
-	$(RM) $(OBJECTS) $(TARGET_HEX) led.elf generated_led.cpp drive
+	$(RM) $(OBJECTS) $(TARGET_HEX) led.elf generated_led.cpp drive makemap message.h

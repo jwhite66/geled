@@ -50,8 +50,11 @@
 /*----------------------------------------------------------------------------
 **  Command list
 **--------------------------------------------------------------------------*/
-#define COMMAND_ACK         (BULB_FLAG_COMMAND | 1)
-#define COMMAND_INIT        (BULB_FLAG_COMMAND | 2)
-#define COMMAND_STATUS      (BULB_FLAG_COMMAND | 3)
-#define COMMAND_CLEAR       (BULB_FLAG_COMMAND | 4)
-#define COMMAND_CHASE       (BULB_FLAG_COMMAND | 5)
+#define COMMAND_ACK             (BULB_FLAG_COMMAND | 1)
+#define COMMAND_INIT            (BULB_FLAG_COMMAND | 2)
+#define COMMAND_STATUS          (BULB_FLAG_COMMAND | 3)
+#define COMMAND_CLEAR           (BULB_FLAG_COMMAND | 4)
+#define COMMAND_CHASE           (BULB_FLAG_COMMAND | 5)
+#define COMMAND_SCROLL_DISPLAY  (BULB_FLAG_COMMAND | 6)
+
+

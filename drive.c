@@ -381,6 +381,8 @@ int main(int argc, char *argv[])
             perform_cmd(fd, COMMAND_STATUS);
         else if (strcmp(argv[i], "chase") == 0)
             perform_cmd(fd, COMMAND_CHASE);
+        else if (strcmp(argv[i], "display") == 0)
+            perform_cmd(fd, COMMAND_SCROLL_DISPLAY);
         else if (strcmp(argv[i],"bulb") == 0)
             write_bulbs = 1;
         else if (perform_custom(fd, argv[i]) != 0)

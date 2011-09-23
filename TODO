@@ -1,8 +1,5 @@
 * Set up licensing (GPL v3)
 * Provide a flash ram setting to perform init on boot
-* Provide a command to store a compressed pattern into flash ram
-* Provide a setting to play a compressed pattern
-  - Optionally on boot
 
 
 --- Long Term ---

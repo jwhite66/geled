@@ -3,4 +3,6 @@ arduino-0022
 *.elf
 *.hex
 drive
+makemap
+message.h
 generated_led.cpp
