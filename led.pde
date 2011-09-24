@@ -303,6 +303,10 @@ void process_bulb(const uint8_t *data)
 uint8_t *g_scroll_pos = g_message_bits;
 int g_scroll_width = 5;
 unsigned long g_next_scroll = 0;
+uint8_t g_scroll_blueshift = 0;
+uint8_t g_scroll_redshift = 0;
+uint8_t g_scroll_greenshift = 0;
+uint8_t g_scroll_bright = MAX_BRIGHT;
 
 uint8_t g_scrolling = 0;
 
@@ -332,15 +336,15 @@ void scroll_display(void)
             }
 
             if (*p & shift)
-                pixel.bright = MAX_BRIGHT;
+                pixel.bright = g_scroll_bright;
             else
                 pixel.bright = 0;
 
             pixel.stringmask = _BV(0);
             pixel.addrshift = addr << 2;
-            pixel.redshift = 0xf0;
-            pixel.greenshift = 0;
-            pixel.blueshift = 0;
+            pixel.redshift = g_scroll_redshift;
+            pixel.greenshift = g_scroll_greenshift;
+            pixel.blueshift = g_scroll_blueshift;
 
             write_raw_bulbs(1, &pixel);
         }
@@ -470,6 +474,10 @@ void process_command(const uint8_t *data)
             g_scrolling = ! g_scrolling;
             if (g_scrolling)
             {
+                g_scroll_blueshift = BULB_BLUESHIFT(data);
+                g_scroll_greenshift = BULB_GREENSHIFT(data);
+                g_scroll_redshift = BULB_REDSHIFT(data);
+                g_scroll_bright = BULB_BRIGHT(data);
                 scroll_display();
                 g_next_scroll = millis() + SCROLL_INTERVAL;
             }

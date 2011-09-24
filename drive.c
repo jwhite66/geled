@@ -13,6 +13,10 @@ int g_verbose = 0;
 long g_writes = 0;
 int g_confirm_every = 24;
 
+int g_red_start = 0, g_red_end = 0;
+int g_green_start = 0, g_green_end = 0;
+int g_blue_start = 0, g_blue_end = 0;
+int g_bright_start = MAX_BRIGHT, g_bright_end = MAX_BRIGHT;
 
 int open_port(char *port_name)
 {
@@ -158,6 +162,13 @@ void perform_cmd(int fd, int cmd)
     memset(out, 0, sizeof(out));
 
     BULB_FLAG_ADDRESS(out) = cmd;
+    if (cmd == COMMAND_SCROLL_DISPLAY)
+    {
+        BULB_BLUE_STRING(out) = g_blue_start << 4;
+        BULB_GREEN_RED(out) = g_green_start << 4 | g_red_start;
+        BULB_BRIGHT(out) = g_bright_start;
+    }
+
     writebuf(fd, out, sizeof(out));
 
     if (getok(fd, 5, 1000 * 1000) != 0)
@@ -257,10 +268,10 @@ int main(int argc, char *argv[])
     int perform_init = 0;
     int addr, addr_start = 0, addr_end = 0;
     int string, string_start = 0, string_end = 0;
-    int bright, bright_start = MAX_BRIGHT, bright_end = MAX_BRIGHT;
-    int red, red_start = 0, red_end = 0;
-    int green, green_start = 0, green_end = 0;
-    int blue, blue_start = 0, blue_end = 0;
+    int bright;
+    int red;
+    int green;
+    int blue;
     int cmd = 0;
     int write_bulbs = 0;
     unsigned long delay = 100;
@@ -310,16 +321,16 @@ int main(int argc, char *argv[])
                 parse_range(optarg, &string_start, &string_end);
                 break;
             case 'b':
-                parse_range(optarg, &bright_start, &bright_end);
+                parse_range(optarg, &g_bright_start, &g_bright_end);
                 break;
             case 'r':
-                parse_range(optarg, &red_start, &red_end);
+                parse_range(optarg, &g_red_start, &g_red_end);
                 break;
             case 'g':
-                parse_range(optarg, &green_start, &green_end);
+                parse_range(optarg, &g_green_start, &g_green_end);
                 break;
             case 'l':
-                parse_range(optarg, &blue_start, &blue_end);
+                parse_range(optarg, &g_blue_start, &g_blue_end);
                 break;
             case 'd':
                 delay = atoi(optarg);
@@ -402,10 +413,10 @@ int main(int argc, char *argv[])
     if (write_bulbs)
     {
         for (addr = addr_start; addr <= addr_end; addr++)
-            for (bright = bright_start; bright <= bright_end; bright++)
-                for (red = red_start; red <= red_end; red++)
-                    for (green = green_start; green <= green_end; green++)
-                        for (blue = blue_start; blue <= blue_end; blue++)
+            for (bright = g_bright_start; bright <= g_bright_end; bright++)
+                for (red = g_red_start; red <= g_red_end; red++)
+                    for (green = g_green_start; green <= g_green_end; green++)
+                        for (blue = g_blue_start; blue <= g_blue_end; blue++)
                         {
                             for (string = string_start; string <= string_end; string++)
                             {
