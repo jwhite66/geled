@@ -7,7 +7,7 @@
 **     -  Gets commands via serial port
 **
 **  License:
-**      LGPL v3
+**      GPL v 3 - See LICENSE
 **
 **--------------------------------------------------------------------------*/
 #include "led.h"

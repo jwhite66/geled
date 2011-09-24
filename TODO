@@ -1,4 +1,3 @@
-* Set up licensing (GPL v3)
 * Provide a flash ram setting to perform init on boot
 
 
@@ -9,7 +8,7 @@ If I can figure out how to keep Tone.cpp out of the .pde build,
   we could switch to Timer2
 
 
---- Never ---
+--- So Long term it might as well be never ---
 Right now, we lock step the strings; if you're going to write to
   more than 1 string, you have to do them at the same time.  That is
   not theoretically required; the pins could be inter mingled in the

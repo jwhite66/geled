@@ -1,3 +1,13 @@
+/*----------------------------------------------------------------------------
+**  drive.c
+**      Command line utility for controlling an Arduino running led.pde
+**
+**  See usage() for hints on usage.
+**
+**  License:
+**      GPL v 3 - See LICENSE
+**
+**--------------------------------------------------------------------------*/
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>

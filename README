@@ -1,1 +1,44 @@
-I should really fill this in...
+This project was written by a Debian Linux user and, as of this date,
+has only every been run on a Debian Linux system.
+
+However, the code is fairly portable.  If you're clever and patient,
+you can likely get it to work for you.
+
+The bulk of the Arduino code is contained in led.pde.  That should
+work in any Arduino environment, and should get you a running
+driver on your Arduino.
+
+You will need the drive command line utility.  Again, the Makefile
+will build it on a Linux system, and maybe other Unix systems.
+
+But it should be possible to compile it on any Unix (including Mac OS X)
+fairly easily.  For Windows, it'll be harder; you'll have to manually
+port the serial IO stuff.
+
+On Debian, I have the following relevant packages:
+  ii  arduino                              0018+dfsg-6                       AVR development board IDE and built-in libraries
+  ii  avr-libc                             1:1.6.8-2                         Standard C library for Atmel AVR development
+  ii  avrdude                              5.10-3                            software for programming Atmel AVR microcontrollers
+  ii  binutils-avr                         2.20.1-1                          Binary utilities supporting Atmel's AVR targets
+  ii  gcc-avr                              1:4.3.5-1                         The GNU C compiler (cross compiler for avr)
+  ii  arduino                              0018+dfsg-6                       AVR development board IDE and built-in libraries
+  ii  arduino-core   
+
+I suspect an apt-get install arduino-core gcc-avr will get you all of those.
+
+I also downloaded the latest Arduino development environment (0022)
+and put a copy of that into the project subdirectory.  I edited the
+Makefile to point at that path.
+
+But once that was done, a simple:
+  make && make upload
+programmed the Arduino.
+
+And
+  ./drive init
+  ./drive status
+  ./drive chase
+
+all did interesting things.  Note that
+  make reset
+is also quite handy.
