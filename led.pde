@@ -458,8 +458,11 @@ void process_command(const uint8_t *data)
             break;
 
         case COMMAND_STATUS:
-            Serial.print("cycles per slice ");
-            Serial.println((int) CYCLES_PER_SLICE);
+            Serial.print("AVR LED alive ");
+            if (g_scrolling)
+                Serial.println("and scrolling.");
+            else
+                Serial.println("and not scrolling.");
             break;
 
         case COMMAND_CLEAR:
