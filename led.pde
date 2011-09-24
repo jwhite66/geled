@@ -299,7 +299,7 @@ void process_bulb(const uint8_t *data)
 /*----------------------------------------------------------------------------
 ** Message scrolling code
 **--------------------------------------------------------------------------*/
-#define SCROLL_INTERVAL 250
+#define SCROLL_INTERVAL 150
 uint8_t *g_scroll_pos = g_message_bits;
 int g_scroll_width = 5;
 unsigned long g_next_scroll = 0;
