@@ -46,6 +46,7 @@ int open_port(char *port_name)
 
 
     tcgetattr(fd, &options);
+    options.c_iflag = options.c_oflag = options.c_lflag = 0;
 
     cfsetispeed(&options, B115200);
     cfsetospeed(&options, B115200);
