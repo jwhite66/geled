@@ -25,6 +25,7 @@ On Debian, I have the following relevant packages:
   ii  arduino-core   
 
 I suspect an apt-get install arduino-core gcc-avr will get you all of those.
+You also now will need libft-dev to get freetype dev libraries.
 
 I also downloaded the latest Arduino development environment (0022)
 and put a copy of that into the project subdirectory.  I edited the
