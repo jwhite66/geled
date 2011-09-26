@@ -104,7 +104,29 @@ int findone(int fd, int target, long max_usec)
     return -1;
 }
 
-void writebuf(int fd, unsigned char *out, int size);
+int raw_writebuf(int fd, unsigned char *out, int size)
+{
+    int rc;
+
+    while (size > 0)
+    {
+        rc = write(fd, out, size);
+        if (rc < 0)
+        {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                continue;
+
+            perror("writebuf: ");
+            return -1;
+        }
+
+        out += rc;
+        size -= rc;
+    }
+
+    return 0;
+}
+
 int getok(int fd, int max_tries, long max_delay)
 {
     unsigned char aok[4] = {COMMAND_ACK,'O','K','\n'};
@@ -112,7 +134,8 @@ int getok(int fd, int max_tries, long max_delay)
 
     for (i = 0; i < max_tries; i++)
     {
-        writebuf(fd, aok, 4);
+        if (raw_writebuf(fd, aok, 4) != 0)
+            return -1;
         if (findone(fd, 'O', max_delay) &&
             findone(fd, 'K', max_delay) &&
             findone(fd, '\n', max_delay))
@@ -127,32 +150,14 @@ int getok(int fd, int max_tries, long max_delay)
 
 void writebuf(int fd, unsigned char *out, int size)
 {
-    int rc;
-    if (size == 4)
-        g_writes++;
-
-    while (size > 0)
+    if (raw_writebuf(fd, out, size) == 0)
     {
-        rc = write(fd, out, size);
-        if (rc < 0)
-        {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                continue;
-
-            perror("writebuf: ");
-            return;
-        }
-
-        out += rc;
-        size -= rc;
+        g_writes++;
+        if (g_confirm_every > 0)
+            if (g_writes % g_confirm_every == 0)
+                if (getok(fd, 1, 1000 * 1000) < 0)
+                    fprintf(stderr, "Error:  did not get periodic ack\n");
     }
-
-    if (g_confirm_every > 0 && size == 4)
-        if (g_writes % g_confirm_every == 0)
-        {
-            if (getok(fd, 1, 1000 * 1000) < 0)
-                fprintf(stderr, "Error:  did not get periodic ack\n");
-        }
 }
 
 void build_bulb(unsigned char *out, unsigned char string, unsigned char addr,
