@@ -1,3 +1,13 @@
+# Configure here
+ARDUINO_DIR = /home/led/geled/arduino-0022/
+
+# You can set MESSAGE in the environment or just use the default
+ifndef MESSAGE
+MESSAGE=Hello World.
+endif
+
+
+
 CC      = avr-gcc
 RM      = rm
 CXX     = avr-g++
@@ -6,7 +16,6 @@ AVRDUDE = avrdude
 
 TARGET_HEX = led.hex
 
-ARDUINO_DIR = /home/jwhite/w/led/arduino-0022/
 ARDUINO_LIB_PATH  = $(ARDUINO_DIR)/libraries
 ARDUINO_CORE_PATH = $(ARDUINO_DIR)/hardware/arduino/cores/arduino
 
@@ -51,7 +60,7 @@ OBJECTS=generated_led.o Print.o HardwareSerial.o wiring.o main.o
 all: $(TARGET_HEX) drive makemap
 
 message.h: Makefile makemap
-	./makemap elegante_pixel.ttf "HELLO WORLD." > message.h
+	./makemap elegante_pixel.ttf "$(MESSAGE)" > message.h
 
 generated_led.cpp: led.pde led.h
 	@echo '#include <WProgram.h>' > $@
