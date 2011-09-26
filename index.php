@@ -46,6 +46,7 @@ $change_message = $form->addElement('submit', 'change_message', array('value' =>
 
 if (strlen($message->getValue()) > 0 && $change_message->getValue() == 'Change Message')
 {
+    echo "<h2>This doesn't work yet.  Permissions most likely...</h2>";
     echo "<p>Changing Message to " . $message->getValue() . "</p>";
     echo "<pre>\n";
     $cmd = "rm message.h";
