@@ -112,6 +112,8 @@ printf("size.metrics.height %ld\n", face->size->metrics.height);
   }
 
     printf("#define MESSAGE_ROWS %d\n", rows);
+    printf("//%s\n", text);
+
     printf("unsigned char g_message_bits[] = { ");
     for (n = 0; n < x; n++)
         printf("0x%02x%c", (int) bits[n], n == x - 1 ? ' ' : ',');

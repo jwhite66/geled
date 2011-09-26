@@ -3,7 +3,7 @@ ARDUINO_DIR = /home/led/geled/arduino-0022/
 
 # You can set MESSAGE in the environment or just use the default
 ifndef MESSAGE
-MESSAGE=Hello World.
+MESSAGE=HELLO WORLD.
 endif
 
 
