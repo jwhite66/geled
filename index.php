@@ -46,16 +46,18 @@ $change_message = $form->addElement('submit', 'change_message', array('value' =>
 
 if (strlen($message->getValue()) > 0 && $change_message->getValue() == 'Change Message')
 {
-    echo "<h2>This doesn't work yet.  Permissions most likely...</h2>";
     echo "<p>Changing Message to " . $message->getValue() . "</p>";
     echo "<pre>\n";
-    $cmd = "rm message.h";
+    $cmd = "rm -f /tmp/www-hack/message.h";
     echo $cmd . ":\n";
     system($cmd);
-    $cmd = "MESSAGE=" . escapeshellarg($message->getValue()) . " make";
+    $cmd = "mkdir /tmp/www-hack";
     echo $cmd . ":\n";
     system($cmd);
-    $cmd = "make upload";
+    $cmd = "OUTDIR=/tmp/www-hack MESSAGE=" . escapeshellarg($message->getValue()) . " make";
+    echo $cmd . ":\n";
+    system($cmd);
+    $cmd = "OUTDIR=/tmp/www-hack make upload";
     echo $cmd . ":\n";
     system($cmd);
     echo "</pre><p>...done.</p>";
@@ -104,7 +106,10 @@ else if ($chase->getValue() == "Chase")
 else if ($reset->getValue() == "Reset")
 {
     $description = "Running make reset";
-    $cmd = "make reset";
+    $cmd = "mkdir /tmp/www-hack 2>&1";
+    echo $cmd . ":\n";
+    system($cmd);
+    $cmd = "OUTDIR=/tmp/www-hack make reset 2>&1";
 }
 else if ($display->getValue() == "Toggle Display")
 {
