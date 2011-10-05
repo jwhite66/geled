@@ -299,6 +299,7 @@ void process_bulb(const uint8_t *data)
 /*----------------------------------------------------------------------------
 ** Message scrolling code
 **--------------------------------------------------------------------------*/
+#define STRING_0_MAX_X  (7 - 1)
 #define SCROLL_INTERVAL 170
 uint8_t *g_scroll_pos = g_message_bits;
 int g_scroll_width = 7;
@@ -310,6 +311,22 @@ uint8_t g_scroll_bright = MAX_BRIGHT;
 
 uint8_t g_scrolling = 0;
 
+void map_xy_to_string_addr(int x, int y, int *string, int *addr)
+{
+    if (x > STRING_0_MAX_X)
+    {
+        *string = 1;
+        x -= STRING_0_MAX_X;
+    }
+    else
+        *string = 0;
+
+    if (x % 2 == 0)
+        *addr = (x * MESSAGE_ROWS) + y ;
+    else
+        *addr = (x * MESSAGE_ROWS) + (MESSAGE_ROWS - y) - 1;
+}
+
 void scroll_display(void)
 {
     int i;
@@ -317,26 +334,23 @@ void scroll_display(void)
     bulb pixel;
     int x, y;
     int shift;
+    int string;
+    int addr;
 
     p = g_scroll_pos;
     for (x = 0; x < g_scroll_width; x++)
     {
         for (y = 0; y < MESSAGE_ROWS; y++)
         {
-            int addr;
-
             shift = 1 << y;
-            if (x % 2 == 0)
-                addr = (x * MESSAGE_ROWS) + y ;
-            else
-                addr = (x * MESSAGE_ROWS) + (MESSAGE_ROWS - y) - 1 ;
+            map_xy_to_string_addr(x, y, &string, &addr);
 
             if (*p & shift)
                 pixel.bright = g_scroll_bright;
             else
                 pixel.bright = 0;
 
-            pixel.stringmask = _BV(0);
+            pixel.stringmask = _BV(string);
             pixel.addrshift = addr << 2;
             pixel.redshift = g_scroll_redshift;
             pixel.greenshift = g_scroll_greenshift;
