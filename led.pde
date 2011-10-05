@@ -301,7 +301,6 @@ void process_bulb(const uint8_t *data)
 **--------------------------------------------------------------------------*/
 #define SCROLL_INTERVAL 170
 uint8_t *g_scroll_pos = g_message_bits;
-// int g_scroll_width = 5;
 int g_scroll_width = 7;
 unsigned long g_next_scroll = 0;
 uint8_t g_scroll_blueshift = 0;
@@ -325,31 +324,13 @@ void scroll_display(void)
         for (y = 0; y < MESSAGE_ROWS; y++)
         {
             int addr;
-/*------------------------------------------------------
-            if (y % 2 == 0)
-            {
-                shift = 1 << y;
-                addr = (x * MESSAGE_ROWS) + y + 10;
-            }
-            else
-            {
-                shift = 1 << (MESSAGE_ROWS - y - 1);
-                addr = (x * MESSAGE_ROWS) + (MESSAGE_ROWS - y) - 1 + 10;
-            }
--------------------------------------------------------*/
-            //code added 9/29/2011 
 
             shift = 1 << y;
             if (x % 2 == 0)
-            {
                 addr = (x * MESSAGE_ROWS) + y ;
-            }
             else
-            {
                 addr = (x * MESSAGE_ROWS) + (MESSAGE_ROWS - y) - 1 ;
-            }
 
-            //end add section
             if (*p & shift)
                 pixel.bright = g_scroll_bright;
             else
@@ -365,9 +346,7 @@ void scroll_display(void)
         }
 
         if (((++p) - g_message_bits) >= sizeof(g_message_bits))
-        {
             p = g_message_bits;
-        }
 
     }
 }
