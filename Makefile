@@ -97,12 +97,9 @@ raw_upload:	$(TARGET_HEX)
 # stdin/out appears to work but generates a spurious error on MacOS at
 # least. Perhaps it would be better to just do it in perl ?
 reset:		
-		for STTYF in 'stty --file' 'stty -f' 'stty <' ; \
-		  do $$STTYF /dev/tty >/dev/null 2>&1 && break ; \
-		done ; \
-		$$STTYF $(ARD_PORT)  hupcl ; \
-		(sleep 0.1 2>/dev/null || sleep 1) ; \
-		$$STTYF $(ARD_PORT) -hupcl 
+	stty --file $(ARD_PORT)  hupcl ; \
+	(sleep 0.1 2>/dev/null || sleep 1) ; \
+	stty --file $(ARD_PORT) -hupcl 
 
 clean:
 	$(RM) $(OBJECTS) $(TARGET_HEX) $(OUTDIR)/led.elf $(OUTDIR)/generated_led.cpp $(OUTDIR)/drive $(OUTDIR)/makemap $(OUTDIR)/message.h
