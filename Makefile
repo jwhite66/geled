@@ -3,7 +3,12 @@ ARDUINO_DIR = /home/led/geled/arduino-0022/
 
 # You can set MESSAGE in the environment or just use the default
 ifndef MESSAGE
-MESSAGE=HELLO WORLD.
+MESSAGE=HACK FACTORY
+endif
+
+# You can set MESSAGE in the environment or just use the default
+ifndef OUTDIR
+OUTDIR=.
 endif
 
 
@@ -14,7 +19,7 @@ CXX     = avr-g++
 OBJCOPY = avr-objcopy
 AVRDUDE = avrdude
 
-TARGET_HEX = led.hex
+TARGET_HEX = $(OUTDIR)/led.hex
 
 ARDUINO_LIB_PATH  = $(ARDUINO_DIR)/libraries
 ARDUINO_CORE_PATH = $(ARDUINO_DIR)/hardware/arduino/cores/arduino
@@ -32,7 +37,7 @@ AVRDUDE_COM_OPTS = -q -V -p $(MCUPART)
 AVRDUDE_ARD_OPTS = -c $(AVRDUDE_ARD_PROGRAMMER) -b $(AVRDUDE_ARD_BAUDRATE) -P $(ARD_PORT) $(AVRDUDE_ARD_EXTRAOPTS)
 
 CPPFLAGS      = -mmcu=$(MCU) -DF_CPU=$(F_CPU) \
-			-I. -I$(ARDUINO_CORE_PATH) \
+			-I. -I$(OUTDIR) -I$(ARDUINO_CORE_PATH) \
 			-g -Os -w -Wall \
 			-ffunction-sections -fdata-sections
 CFLAGS        = -std=gnu99
@@ -40,50 +45,47 @@ CXXFLAGS      = -fno-exceptions
 LDFLAGS       = -mmcu=$(MCU) -lm -Wl,--gc-sections -Os
 
 
-%.o: $(ARDUINO_CORE_PATH)/%.cpp
+$(OUTDIR)/%.o: $(ARDUINO_CORE_PATH)/%.cpp
 	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $@
 
-%.o: %.acpp
-	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $@
-
-%.o: $(ARDUINO_CORE_PATH)/%.c
+$(OUTDIR)/%.o: $(ARDUINO_CORE_PATH)/%.c
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
-%.o: %.c
+$(OUTDIR)/%.o: %.c
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
-%.hex: %.elf
+$(OUTDIR)/%.hex: $(OUTDIR)/%.elf
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
 
-OBJECTS=generated_led.o Print.o HardwareSerial.o wiring.o main.o
+OBJECTS=$(OUTDIR)/generated_led.o $(OUTDIR)/Print.o $(OUTDIR)/HardwareSerial.o $(OUTDIR)/wiring.o $(OUTDIR)/main.o
 
-all: $(TARGET_HEX) drive makemap
+all: $(TARGET_HEX) $(OUTDIR)/drive $(OUTDIR)/makemap
 
-message.h: Makefile makemap
-	./makemap elegante_pixel.ttf "$(MESSAGE)" > message.h
+$(OUTDIR)/message.h: Makefile $(OUTDIR)/makemap
+	$(OUTDIR)/makemap elegante_pixel.ttf "$(MESSAGE)" > $(OUTDIR)/message.h
 
-generated_led.cpp: led.pde led.h
+$(OUTDIR)/generated_led.cpp: led.pde led.h $(OUTDIR)/message.h
 	@echo '#include <WProgram.h>' > $@
 	@cat $< >>$@
 
-generated_led.o: led.pde led.h message.h
+$(OUTDIR)/generated_led.o: $(OUTDIR)/generated_led.cpp
 
-drive: drive.c led.h
-	gcc -Wall -o $@ $<
+$(OUTDIR)/drive: drive.c led.h
+	gcc -Wall -I. -o $@ $<
 
-makemap: makemap.c led.h
-	gcc -Wall -o $@ -I /usr/include/freetype2 $< -lfreetype -lm
+$(OUTDIR)/makemap: makemap.c led.h
+	gcc -Wall -o $@ -I. -I $(OUTDIR) -I /usr/include/freetype2 $< -lfreetype -lm
 
 
-led.elf: $(OBJECTS)
+$(OUTDIR)/led.elf: $(OBJECTS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJECTS)
 
-led.hex: led.elf
+$(OUTDIR)/led.hex: $(OUTDIR)/led.elf
 
-Print.o: $(ARDUINO_CORE_PATH)/Print.cpp
-HardwareSerial.o: $(ARDUINO_CORE_PATH)/HardwareSerial.cpp
-wiring.o: $(ARDUINO_CORE_PATH)/wiring.c
-main.o: $(ARDUINO_CORE_PATH)/main.cpp
+$(OUTDIR)/Print.o: $(ARDUINO_CORE_PATH)/Print.cpp
+$(OUTDIR)/HardwareSerial.o: $(ARDUINO_CORE_PATH)/HardwareSerial.cpp
+$(OUTDIR)/wiring.o: $(ARDUINO_CORE_PATH)/wiring.c
+$(OUTDIR)/main.o: $(ARDUINO_CORE_PATH)/main.cpp
 
 upload:		reset raw_upload
 
@@ -103,4 +105,4 @@ reset:
 		$$STTYF $(ARD_PORT) -hupcl 
 
 clean:
-	$(RM) $(OBJECTS) $(TARGET_HEX) led.elf generated_led.cpp drive makemap message.h
+	$(RM) $(OBJECTS) $(TARGET_HEX) $(OUTDIR)/led.elf $(OUTDIR)/generated_led.cpp $(OUTDIR)/drive $(OUTDIR)/makemap $(OUTDIR)/message.h
