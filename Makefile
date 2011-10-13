@@ -3,7 +3,7 @@ ARDUINO_DIR = /home/led/geled/arduino-0022/
 
 # You can set MESSAGE in the environment or just use the default
 ifndef MESSAGE
-MESSAGE=HACK FACTORY
+MESSAGE=WELCOME TO TC MAKER @ THE HACK FACTORY
 endif
 
 # You can set MESSAGE in the environment or just use the default

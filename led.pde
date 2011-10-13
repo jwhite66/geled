@@ -299,10 +299,10 @@ void process_bulb(const uint8_t *data)
 /*----------------------------------------------------------------------------
 ** Message scrolling code
 **--------------------------------------------------------------------------*/
-#define STRING_0_MAX_X  (7 - 1)
+#define STRING_0_MAX_X  (10 - 1)
 #define SCROLL_INTERVAL 170
 uint8_t *g_scroll_pos = g_message_bits;
-int g_scroll_width = 7;
+int g_scroll_width = (10 + 7);
 unsigned long g_next_scroll = 0;
 uint8_t g_scroll_blueshift = 0;
 uint8_t g_scroll_redshift = 0;
@@ -316,7 +316,7 @@ void map_xy_to_string_addr(int x, int y, int *string, int *addr)
     if (x > STRING_0_MAX_X)
     {
         *string = 1;
-        x -= STRING_0_MAX_X;
+        x -= (STRING_0_MAX_X + 1);
     }
     else
         *string = 0;
@@ -340,6 +340,16 @@ void scroll_display(void)
     p = g_scroll_pos;
     for (x = 0; x < g_scroll_width; x++)
     {
+#if 0
+        if (*p == 0xff)
+        {
+            p++;
+            g_scroll_redshift = *p++ << 4;
+            g_scroll_greenshift = *p++ << 4;
+            g_scroll_blueshift = *p++ << 4;
+            continue;
+        }
+#endif
         for (y = 0; y < MESSAGE_ROWS; y++)
         {
             shift = 1 << y;
