@@ -1,5 +1,3 @@
-// TODO - we're getting the occasional odd color bulb - why?
-
 #define MAX_BRIGHT          0xCC
 #define ADDR_COUNT          50
 #define STRING_COUNT        6
