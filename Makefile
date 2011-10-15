@@ -44,6 +44,8 @@ CFLAGS        = -std=gnu99
 CXXFLAGS      = -fno-exceptions
 LDFLAGS       = -mmcu=$(MCU) -lm -Wl,--gc-sections -Os
 
+SIMCFLAGS  := $(shell pkg-config --cflags xcb xcb-keysyms)
+SIMLDFLAGS := $(shell pkg-config --libs xcb xcb-keysyms) -lpthread -L ledsim -lledsim
 
 $(OUTDIR)/%.o: $(ARDUINO_CORE_PATH)/%.cpp
 	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $@
@@ -72,6 +74,9 @@ $(OUTDIR)/generated_led.o: $(OUTDIR)/generated_led.cpp
 
 $(OUTDIR)/drive: drive.c led.h
 	gcc -Wall -I. -o $@ $<
+
+$(OUTDIR)/war: war.c led.h
+	gcc -Wall -I. $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS)
 
 $(OUTDIR)/makemap: makemap.c led.h
 	gcc -Wall -o $@ -I. -I $(OUTDIR) -I /usr/include/freetype2 $< -lfreetype -lm
