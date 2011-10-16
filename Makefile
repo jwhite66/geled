@@ -75,8 +75,8 @@ $(OUTDIR)/generated_led.o: $(OUTDIR)/generated_led.cpp
 $(OUTDIR)/drive: drive.c led.h
 	gcc -Wall -I. -o $@ $<
 
-$(OUTDIR)/war: war.c led.h
-	gcc -Wall -I. $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS)
+$(OUTDIR)/warsim: war.c led.h
+	gcc -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS)
 
 $(OUTDIR)/makemap: makemap.c led.h
 	gcc -Wall -o $@ -I. -I $(OUTDIR) -I /usr/include/freetype2 $< -lfreetype -lm
