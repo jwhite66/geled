@@ -1,3 +1,5 @@
+#define LED_CFG_FILE        "led.cfg"
+
 #define MAX_BRIGHT          0xCC
 #define ADDR_COUNT          50
 #define STRING_COUNT        6
@@ -86,5 +88,7 @@ void led_set_pixel(LED_HANDLE_T, int x, int y, int bright, int r, int g, int b);
 void led_term(LED_HANDLE_T h);
 
 /*  Function only used by the simulator to report X events */
+#if defined(SIMULATOR)
 void ledsim_set_x_callback(LED_HANDLE_T h, ledsim_x_callback x_callback);
 void ledsim_join(LED_HANDLE_T h);
+#endif

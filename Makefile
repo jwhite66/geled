@@ -44,6 +44,9 @@ CFLAGS        = -std=gnu99
 CXXFLAGS      = -fno-exceptions
 LDFLAGS       = -mmcu=$(MCU) -lm -Wl,--gc-sections -Os
 
+LIBCONFIGCFLAGS  := $(shell pkg-config --cflags libconfig)
+LIBCONFIGLDFLAGS := $(shell pkg-config --libs libconfig)
+
 SIMCFLAGS  := $(shell pkg-config --cflags xcb xcb-keysyms)
 SIMLDFLAGS := $(shell pkg-config --libs xcb xcb-keysyms) -lpthread -L ledsim -lledsim
 
@@ -74,6 +77,18 @@ $(OUTDIR)/generated_led.o: $(OUTDIR)/generated_led.cpp
 
 $(OUTDIR)/drive: drive.c led.h
 	gcc -Wall -I. -o $@ $<
+
+$(OUTDIR)/libled.a: $(OUTDIR)/libled.o
+	ar r $@ $<
+
+$(OUTDIR)/libled.o: libled.c led.h
+	gcc -Wall -c -I. $(LIBLEDCFLAGS) -o $@ $< $(LIBLEDLDFLAGS)
+
+$(OUTDIR)/testlib: testlib.c led.h $(OUTDIR)/libled.a
+	gcc -Wall -I. -o $@ $< $(OUTDIR)/libled.a $(LIBCONFIGLDFLAGS)
+
+$(OUTDIR)/testlibsim: testlib.c led.h
+	gcc -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS)
 
 $(OUTDIR)/warsim: war.c led.h
 	gcc -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS)

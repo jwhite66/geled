@@ -8,3 +8,6 @@ warsim
 makemap
 message.h
 generated_led.cpp
+libled.a
+testlib
+testlibsim

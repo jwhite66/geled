@@ -151,6 +151,7 @@ void led_term(LED_HANDLE_T h)
     pthread_cancel(h->thread);
     xcb_key_symbols_free(h->syms);
     xcb_disconnect (h->connection);
+    free(h);
 }
 
 void led_set_pixel(LED_HANDLE_T h, int x, int y, int bright, int r, int g, int b)
