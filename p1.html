@@ -1,0 +1,46 @@
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+   <meta charset="utf-8">
+   <title>Player 1</title>
+ </head>
+ <body>
+   <table width="320px">
+   <tr width="100%">
+       <td width="33%"></td>
+       <td width="33%">
+            <img id="up" src="images/blueup.png" alt="Up">
+       </td>
+   </tr>
+
+    <tr width="100%">
+        <td width="33%">
+            <img id="left" src="images/blueleft.png" alt="Left">
+        </td>
+        <td width="33%">
+        </td>
+        <td width="33%">
+            <img id="right" src="images/blueright.png" alt="Right">
+        </td>
+    </tr>
+
+    <tr width="100%">
+        <td width="33%">
+        </td>
+        <td width="33%">
+            <img id="fire" src="images/attack.png" alt="Fire">
+        </td>
+        <td width="33%"> </td>
+    </tr>
+    </table>
+
+   <script src="jquery-1.6.4.js"></script>
+   <script>
+     $(document).ready(function(){
+       $("img").click(function(event){
+         $.ajax({ url: "writefifo.php?cmd=0-" + event.target.id});
+       });
+     });
+   </script>
+ </body>
+ </html>
