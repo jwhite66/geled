@@ -21,15 +21,14 @@ typedef struct
     int b;
 } pixel_t;
 
-typedef void (*led_x_callback)(void * h, unsigned long key);
-
+typedef void (*ledsim_x_callback)(void *h, unsigned long key);
 typedef struct xinfo_struct
 {
     xcb_connection_t *connection;
     xcb_screen_t *screen;
     xcb_window_t window;
     xcb_key_symbols_t *syms;
-    led_x_callback x_callback;
+    ledsim_x_callback x_callback;
     pthread_t thread;
 
     pixel_t pixels[PIXELS_WIDE][PIXELS_HIGH];
@@ -103,13 +102,11 @@ static void process_event_thread(xinfo_t *xinfo)
 }
 
 
-LED_HANDLE_T led_init(led_x_callback x_callback)
+LED_HANDLE_T led_init(void)
 {
     pthread_attr_t attr;
     xinfo_t *xinfo = malloc(sizeof(*xinfo));
     memset(xinfo, 0, sizeof(*xinfo));
-
-    xinfo->x_callback = x_callback;
 
     /* Open the connection to the X server */
     xinfo->connection = xcb_connect (NULL, NULL);
@@ -169,7 +166,12 @@ void led_get_size(LED_HANDLE_T h, int *wide, int *high)
     *high = PIXELS_HIGH;
 }
 
-void led_join(LED_HANDLE_T h)
+void ledsim_set_x_callback(LED_HANDLE_T h, ledsim_x_callback x_callback)
+{
+    h->x_callback = x_callback;
+}
+
+void ledsim_join(LED_HANDLE_T h)
 {
     pthread_join(h->thread, NULL);
 }

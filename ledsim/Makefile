@@ -8,6 +8,3 @@ libledsim.a: ledsim.o
 ledsim.o: ledsim.c ../led.h Makefile
 	gcc $(CFLAGS) -c -o $@ $< $(LDFLAGS)
 
-#LIBS    := libledsim.so
-#war: war.c $(LIBS)
-#	gcc $(CFLAGS) -o $@ $< $(LDFLAGS) $(LIBS)

@@ -9,7 +9,9 @@
 #include <errno.h>
 
 
+#if defined(SIMULATOR)
 #include <X11/keysym.h>
+#endif
 
 #include "led.h"
 
@@ -274,6 +276,7 @@ void right(LED_HANDLE_T h, dude_t *dude)
     change_orientation(dude, 1);
 }
 
+#if defined(SIMULATOR)
 void my_callback(LED_HANDLE_T h, unsigned long key)
 {
     printf("Key 0x%lx\n", key);
@@ -306,7 +309,7 @@ void my_callback(LED_HANDLE_T h, unsigned long key)
 
     draw_dudes(h);
 }
-
+#endif
 
 pixel_t * compute_explosion(explosion_t *exp, int x, int y)
 {
@@ -463,7 +466,11 @@ int main (int argc, char *argv[])
     LED_HANDLE_T p;
     fifo_t f;
 
-    p = led_init((led_x_callback) my_callback);
+    p = led_init();
+#if defined(SIMULATOR)
+    ledsim_set_x_callback(p, my_callback);
+#endif
+
     led_get_size(p, &g_wide, &g_high);
 
     if (fifo_init(FIFO_PATH, &fifo_callback, &f, p) != 0)
