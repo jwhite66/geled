@@ -6,6 +6,8 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#include "led.h"
+
 void draw_bitmap(FT_Bitmap*  bitmap, char **comments, char *bits)
 {
     int x, y;
@@ -20,6 +22,63 @@ void draw_bitmap(FT_Bitmap*  bitmap, char **comments, char *bits)
 
 }
 
+
+/* [bright|red|green|blue] */
+int get_color_command(const char *p, int n, char *colors)
+{
+    int bright = MAX_BRIGHT;
+    int red = 0;
+    int green = 0;
+    int blue = 0;
+    char *q;
+
+    if (sscanf(p, "[%x|%x|%x|%x]", &bright, &red, &green, &blue) == 4)
+        ;
+    else if (strncasecmp(p, "[red]", 5) == 0)
+    {
+        bright = MAX_BRIGHT;
+        red = 0xf;
+    }
+    else if (strncasecmp(p, "[green]", 7) == 0)
+    {
+        bright = MAX_BRIGHT;
+        green = 0xf;
+    }
+    else if (strncasecmp(p, "[blue]", 6) == 0)
+    {
+        bright = MAX_BRIGHT;
+        blue = 0xf;
+    }
+    else if (strncasecmp(p, "[purple]", 8) == 0)
+    {
+        bright = MAX_BRIGHT;
+        red = 13;
+        blue = 13;
+    }
+    else if (strncasecmp(p, "[orange]", 8) == 0)
+    {
+        bright = MAX_BRIGHT;
+        red = 13;
+        green = 1;
+    }
+    else if (strncasecmp(p, "[yellow]", 8) == 0)
+    {
+        bright = MAX_BRIGHT;
+        red = 13;
+        green = 6;
+    }
+    else if (*p == '[')
+        fprintf(stderr, "Huh? [%s]\n", p);
+    else
+        return 0;
+
+    sprintf(colors + strlen(colors), "    { %d, 0x%x, 0x%x, 0x%x, 0x%x },\n", n, bright, red << 4, green << 4, blue << 4);
+    q = strchr(p, ']');
+    if (q)
+        return q - p + 1;
+
+    return 0;
+}
 
 int
 main( int     argc,
@@ -36,6 +95,7 @@ main( int     argc,
   int           n, num_chars;
 
     char comments[20][2048];
+    char color_map_buf[8096];
     char bits[2048];
     int rows = 0;
 
@@ -43,6 +103,8 @@ main( int     argc,
 
     char *commentp[20];
     char *bitp;
+
+    int skip;
 
   if ( argc != 3 )
   {
@@ -82,16 +144,23 @@ printf("size.metrics.height %ld\n", face->size->metrics.height);
 
     memset(comments, ' ', sizeof(comments));
     memset(bits, 0, sizeof(bits));
+    memset(color_map_buf, 0, sizeof(color_map_buf));
 
   for ( n = 0, x= 0; n < num_chars; n++ )
   {
+    skip = get_color_command(&text[n], x, color_map_buf);
+    if (skip > 0)
+    {
+        n += skip - 1;
+        continue;
+    }
     /* load glyph image into the slot (erase previous one) */
     error = FT_Load_Char( face, text[n], FT_LOAD_RENDER);
     if ( error )
       continue;                 /* ignore errors */
 
 //printf("%d: max %d, current %d\n", n, rows, face->glyph->bitmap.rows);
-    if (n > 0)
+    if (rows > 0)
         assert(rows >= face->glyph->bitmap.rows);
     else
         rows = face->glyph->bitmap.rows;
@@ -123,6 +192,9 @@ printf("size.metrics.height %ld\n", face->size->metrics.height);
         comments[y][x] = 0;
         printf("//%s\n", comments[y]);
     }
+
+    printf("scroll_color_map_t g_scroll_color_map[] = \n{\n%s};\n", color_map_buf);
+
 
   FT_Done_Face    ( face );
   FT_Done_FreeType( library );

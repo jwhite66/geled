@@ -300,7 +300,7 @@ void process_bulb(const uint8_t *data)
 ** Message scrolling code
 **--------------------------------------------------------------------------*/
 #define STRING_0_MAX_X  (10 - 1)
-#define SCROLL_INTERVAL 170
+#define SCROLL_INTERVAL 200
 uint8_t *g_scroll_pos = g_message_bits;
 int g_scroll_width = (10 + 7);
 unsigned long g_next_scroll = 0;
@@ -327,6 +327,31 @@ void map_xy_to_string_addr(int x, int y, int *string, int *addr)
         *addr = (x * MESSAGE_ROWS) + (MESSAGE_ROWS - y) - 1;
 }
 
+
+scroll_color_map_t * current_map(int n)
+{
+    static scroll_color_map_t def;
+    int i;
+    scroll_color_map_t *ret;
+
+    if (sizeof(g_scroll_color_map) == 0)
+    {
+        def.bright = g_scroll_bright;
+        def.r = g_scroll_redshift;
+        def.g = g_scroll_greenshift;
+        def.b = g_scroll_blueshift;
+        ret = &def;
+    }
+
+    for (i = 0; i < sizeof(g_scroll_color_map) / sizeof(g_scroll_color_map[0]); i++)
+        if (n >= g_scroll_color_map[i].start)
+            ret = &g_scroll_color_map[i];
+        else
+            break;
+
+    return ret;
+}
+
 void scroll_display(void)
 {
     int i;
@@ -336,35 +361,27 @@ void scroll_display(void)
     int shift;
     int string;
     int addr;
+    scroll_color_map_t *map;
 
     p = g_scroll_pos;
     for (x = 0; x < g_scroll_width; x++)
     {
-#if 0
-        if (*p == 0xff)
-        {
-            p++;
-            g_scroll_redshift = *p++ << 4;
-            g_scroll_greenshift = *p++ << 4;
-            g_scroll_blueshift = *p++ << 4;
-            continue;
-        }
-#endif
         for (y = 0; y < MESSAGE_ROWS; y++)
         {
             shift = 1 << y;
             map_xy_to_string_addr(x, y, &string, &addr);
+            map = current_map(p - g_message_bits);
 
             if (*p & shift)
-                pixel.bright = g_scroll_bright;
+                pixel.bright = map->bright;
             else
                 pixel.bright = 0;
 
             pixel.stringmask = _BV(string);
             pixel.addrshift = addr << 2;
-            pixel.redshift = g_scroll_redshift;
-            pixel.greenshift = g_scroll_greenshift;
-            pixel.blueshift = g_scroll_blueshift;
+            pixel.redshift = map->r;
+            pixel.greenshift = map->g;
+            pixel.blueshift = map->b;
 
             write_raw_bulbs(1, &pixel);
         }

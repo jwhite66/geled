@@ -56,6 +56,23 @@
 #define COMMAND_SCROLL_DISPLAY  (BULB_FLAG_COMMAND | 6)
 
 /*----------------------------------------------------------------------------
+**  Structure definitions
+**--------------------------------------------------------------------------*/
+#ifdef __cplusplus
+extern "C"{
+#endif
+typedef struct {
+    int start;
+    unsigned char bright;
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+} scroll_color_map_t;
+#ifdef __cplusplus
+}
+#endif
+
+/*----------------------------------------------------------------------------
 **  Function prototypes; should work for ledsim.so and for led.so
 **--------------------------------------------------------------------------*/
 #if ! defined(LED_HANDLE_T)
@@ -73,3 +90,5 @@ void led_term(LED_HANDLE_T h);
 
 /*  Function only used by the simulator if the main wants to quit */
 void led_join(LED_HANDLE_T h);
+
+
