@@ -55,4 +55,21 @@
 #define COMMAND_CHASE           (BULB_FLAG_COMMAND | 5)
 #define COMMAND_SCROLL_DISPLAY  (BULB_FLAG_COMMAND | 6)
 
+/*----------------------------------------------------------------------------
+**  Function prototypes; should work for ledsim.so and for led.so
+**--------------------------------------------------------------------------*/
+#if ! defined(LED_HANDLE_T)
+#define LED_HANDLE_T void *
 
+/*  Function only used by the simulator to report X events */
+typedef void (*led_x_callback)(void *h, unsigned long key);
+
+#endif
+
+void led_get_size(LED_HANDLE_T h, int *wide, int *high);
+LED_HANDLE_T led_init(led_x_callback x_callback);
+void led_set_pixel(LED_HANDLE_T, int x, int y, int bright, int r, int g, int b);
+void led_term(LED_HANDLE_T h);
+
+/*  Function only used by the simulator if the main wants to quit */
+void led_join(LED_HANDLE_T h);

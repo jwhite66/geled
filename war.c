@@ -2,6 +2,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/fcntl.h>
+#include <pthread.h>
+#include <errno.h>
+
 
 #include <X11/keysym.h>
 
@@ -245,6 +251,29 @@ void fire_bullet(LED_HANDLE_T h, dude_t *dude)
     bullet->y = (int) wrap_y((int)dude->y, Y_ORIENT(dude->orientation));
 }
 
+
+void change_orientation(dude_t *dude, int o)
+{
+    dude->orientation += o;
+
+    if (dude->orientation < 0)
+        dude->orientation = ORIENT_WEST;
+    if (dude->orientation > ORIENT_WEST)
+        dude->orientation = ORIENT_NORTH;
+}
+
+void left(LED_HANDLE_T h, dude_t *dude)
+{
+    erase_dude(h, dude);
+    change_orientation(dude, -1);
+}
+
+void right(LED_HANDLE_T h, dude_t *dude)
+{
+    erase_dude(h, dude);
+    change_orientation(dude, 1);
+}
+
 void my_callback(LED_HANDLE_T h, unsigned long key)
 {
     printf("Key 0x%lx\n", key);
@@ -252,20 +281,10 @@ void my_callback(LED_HANDLE_T h, unsigned long key)
         g_quit++;
 
     if (key == 'd')
-    {
-        erase_dude(h, &g_dudes[BLUE_DUDE]);
-        g_dudes[BLUE_DUDE].orientation++;
-    }
-    if (key == 'a')
-    {
-        erase_dude(h, &g_dudes[BLUE_DUDE]);
-        g_dudes[BLUE_DUDE].orientation--;
-    }
+        right(h, &g_dudes[BLUE_DUDE]);
 
-    if (g_dudes[BLUE_DUDE].orientation < 0)
-        g_dudes[BLUE_DUDE].orientation = ORIENT_WEST;
-    if (g_dudes[BLUE_DUDE].orientation > ORIENT_WEST)
-        g_dudes[BLUE_DUDE].orientation = ORIENT_NORTH;
+    if (key == 'a')
+        left(h, &g_dudes[BLUE_DUDE]);
 
     if (key == 'w')
         accelerate_dude(h, &g_dudes[BLUE_DUDE]);
@@ -274,20 +293,10 @@ void my_callback(LED_HANDLE_T h, unsigned long key)
         fire_bullet(h, &g_dudes[BLUE_DUDE]);
 
     if (key == XK_Right)
-    {
-        erase_dude(h, &g_dudes[RED_DUDE]);
-        g_dudes[RED_DUDE].orientation++;
-    }
-    if (key == XK_Left)
-    {
-        erase_dude(h, &g_dudes[RED_DUDE]);
-        g_dudes[RED_DUDE].orientation--;
-    }
+        right(h, &g_dudes[RED_DUDE]);
 
-    if (g_dudes[RED_DUDE].orientation < 0)
-        g_dudes[RED_DUDE].orientation = ORIENT_WEST;
-    if (g_dudes[RED_DUDE].orientation > ORIENT_WEST)
-        g_dudes[RED_DUDE].orientation = ORIENT_NORTH;
+    if (key == XK_Left)
+        left(h, &g_dudes[RED_DUDE]);
 
     if (key == XK_Up)
         accelerate_dude(h, &g_dudes[RED_DUDE]);
@@ -360,12 +369,108 @@ void move_stuff(LED_HANDLE_T h)
 }
 
 
+#define MAX_COMMAND_LEN 80
+#define FIFO_PATH "myfifo"
+
+typedef void (*fifo_callback_t)(void *, void *);
+
+typedef struct
+{
+    char *pathname;
+    pthread_t t;
+    void *first_parm;
+    fifo_callback_t callback;
+} fifo_t;
+
+static void fifo_thread(fifo_t *f)
+{
+    char buf[MAX_COMMAND_LEN];
+    FILE *fp;
+
+    while (1)
+    {
+        fp = fopen(f->pathname, "r");
+        if (! fp)
+            break;
+
+        while (! feof(fp))
+        {
+            buf[0] = '\0';
+            if (fgets(buf, sizeof(buf), fp) == NULL)
+                break;
+
+            if (strlen(buf) > 0)
+            {
+                if (buf[strlen(buf) - 1] == '\n')
+                    buf[strlen(buf) - 1] = '\0';
+            }
+
+            printf("Read [%s], going to %p\n", buf, f->callback);
+
+            (*f->callback)(f->first_parm, buf);
+        }
+    }
+}
+
+int fifo_init(const char *pathname, fifo_callback_t callback, fifo_t *f, void * first_parm)
+{
+    pthread_attr_t attr;
+    int rc;
+
+    rc = mkfifo(pathname, S_IRWXU | S_IRWXG);
+    if (rc == -1 && errno != EEXIST)
+        return -1;
+
+    if (pthread_attr_init(&attr) != 0 ||
+        pthread_create(&f->t, &attr, (void * (*)(void *))fifo_thread, f) != 0)
+        return -1;
+
+    f->pathname = strdup(pathname);
+    f->callback = callback;
+    f->first_parm = first_parm;
+
+    return 0;
+}
+
+void fifo_term(fifo_t *f)
+{
+    pthread_cancel(f->t);
+    free(f->pathname);
+}
+
+
+void fifo_callback(void *parm, void *p)
+{
+    LED_HANDLE_T h = (LED_HANDLE_T) parm;
+    int dude;
+    char buf[MAX_COMMAND_LEN];
+    printf("Callback of %s\n", (char *) p);
+    sscanf(p, "%d-%s\n", &dude, buf);
+    if (strcasecmp(buf, "left") == 0)
+        left(h, &g_dudes[dude]);
+    if (strcasecmp(buf, "right") == 0)
+        right(h, &g_dudes[dude]);
+    if (strcasecmp(buf, "up") == 0)
+        accelerate_dude(h, &g_dudes[dude]);
+    if (strcasecmp(buf, "fire") == 0)
+        fire_bullet(h, &g_dudes[dude]);
+
+    draw_dudes(h);
+}
+
 int main (int argc, char *argv[])
 {
     LED_HANDLE_T p;
+    fifo_t f;
 
     p = led_init((led_x_callback) my_callback);
     led_get_size(p, &g_wide, &g_high);
+
+    if (fifo_init(FIFO_PATH, &fifo_callback, &f, p) != 0)
+    {
+        fprintf(stderr, "Error opening command fifo\n");
+        exit(1);
+    }
 
     memset(&g_dudes[BLUE_DUDE], 0, sizeof(g_dudes[BLUE_DUDE]));
     memset(&g_dudes[RED_DUDE], 0, sizeof(g_dudes[RED_DUDE]));
@@ -380,7 +485,7 @@ int main (int argc, char *argv[])
     g_explosions[g_explosion_count].x = 5;
     g_explosions[g_explosion_count].y = 3;
     g_explosions[g_explosion_count].tick = 0;
-    g_explosion_count++;
+    //g_explosion_count++;
 
     draw_dudes(p);
     while (! g_quit)
@@ -391,6 +496,7 @@ int main (int argc, char *argv[])
     }
 
     led_term(p);
+    fifo_term(&f);
 
     return 0;
 }
