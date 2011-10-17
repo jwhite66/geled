@@ -8,6 +8,13 @@
 #include <stdlib.h>
 #include <libconfig.h>
 
+
+typedef struct
+{
+    int string;
+    int addr;
+} bulb_map_t;
+
 typedef struct
 {
     char *port_name;
@@ -17,6 +24,7 @@ typedef struct
     config_t config;
     long height;
     long width;
+    bulb_map_t *bulb_map;
 } serial_t;
 
 #define LED_HANDLE_T serial_t *
@@ -166,6 +174,39 @@ void build_bulb(unsigned char *out, unsigned char string, unsigned char addr,
     BULB_BRIGHT(out) = bright;
 }
 
+int get_one_setting(config_setting_t *setting, const char *name, long *out)
+{
+    if (config_setting_lookup_int(setting, name, out) != CONFIG_TRUE)
+    {
+        fprintf(stderr, "Error:  no setting '%s' on string %s in config file.\n", name, config_setting_name(setting));
+        return 1;
+    }
+    return 0;
+}
+
+
+
+void compute_x_y(int addr, long start, long end, long fromx, long fromy, long tox, long toy, int *x, int *y)
+{
+    int total = end - start + 1;
+    int width = tox - fromx + 1;
+    int height = total / width;
+
+    int col = addr / height;
+    int rowup;
+    if (col % 2 == 0)
+        rowup = addr % height;
+    else
+        rowup = height - (addr % height) - 1;
+
+    *x = fromx + col;
+    *y = fromy - rowup;
+printf("Computed %dx%d for [addr %d|start %ld|end %ld|fromx %ld|fromy %ld|tox %ld|toy %ld]\n",
+  *x, *y, addr, start, end, fromx, fromy, tox, toy);
+}
+
+
+
 serial_t *led_init(void)
 {
     serial_t *ser = malloc(sizeof(*ser));
@@ -176,6 +217,49 @@ serial_t *led_init(void)
 
     config_lookup_int(&ser->config, "display/height", &ser->height);
     config_lookup_int(&ser->config, "display/width", &ser->width);
+
+    if (ser->height == 0 || ser->width == 0)
+    {
+        fprintf(stderr, "Error:  width and height not given in cfg file.\n");
+        return NULL;
+    }
+
+    ser->bulb_map = malloc(ser->height * ser->width * sizeof(*ser->bulb_map));
+    if (! ser->bulb_map)
+    {
+        fprintf(stderr, "Error:  Cannot allocat %ldx%ld map.\n", ser->width, ser->height);
+        return NULL;
+    }
+    memset(ser->bulb_map, 0, ser->height * ser->width * sizeof(*ser->bulb_map));
+
+    config_setting_t *strings = config_setting_get_member(config_root_setting(&ser->config), "strings");
+    if (strings)
+    {
+        int i;
+        for (i = 0; i < STRING_COUNT; i++)
+        {
+            long string, start, end, fromx, fromy, tox, toy;
+            int x, y, addr;
+            config_setting_t *str = config_setting_get_elem(strings, i);
+            if (! str)
+                break;
+
+            if (get_one_setting(str, "string", &string)) continue;
+            if (get_one_setting(str, "start", &start)) continue;
+            if (get_one_setting(str, "end", &end)) continue;
+            if (get_one_setting(str, "fromx", &fromx)) continue;
+            if (get_one_setting(str, "fromy", &fromy)) continue;
+            if (get_one_setting(str, "tox", &tox)) continue;
+            if (get_one_setting(str, "toy", &toy)) continue;
+
+            for (addr = start; addr <= end; addr++)
+            {
+                compute_x_y(addr, start, end, fromx, fromy, tox, toy, &x, &y);
+                (ser->bulb_map + ((y * ser->width) + x))->string = string;
+                (ser->bulb_map + ((y * ser->width) + x))->addr = addr;
+            }
+        }
+    }
 
     return ser;
 }
@@ -189,6 +273,10 @@ void led_get_size(serial_t *ser, int *wide, int *high)
 
 void led_set_pixel(serial_t *ser, int x, int y, int bright, int r, int g, int b)
 {
+    bulb_map_t *bulb = ser->bulb_map + (y * ser->width) + x;
+    printf("x %d, y %x - [String %d|Addr %d|bright 0x%x|r 0x%x|g 0x%x|b 0x%x]\n",
+        x, y, bulb->string, bulb->addr, bright, r, g, b);
+        
 }
 
 void led_term(serial_t *ser)
