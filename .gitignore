@@ -9,5 +9,6 @@ makemap
 message.h
 generated_led.cpp
 libled.a
+libledsim.a
 testlib
 testlibsim

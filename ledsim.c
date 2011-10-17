@@ -37,7 +37,7 @@ typedef struct xinfo_struct
 
 #define LED_HANDLE_T    xinfo_t *
 
-#include "../led.h"
+#include "led.h"
 
 #define PIXELS_WIDE     17
 #define PIXELS_HIGH     5

@@ -48,7 +48,7 @@ LIBCONFIGCFLAGS  := $(shell pkg-config --cflags libconfig)
 LIBCONFIGLDFLAGS := $(shell pkg-config --libs libconfig)
 
 SIMCFLAGS  := $(shell pkg-config --cflags xcb xcb-keysyms)
-SIMLDFLAGS := $(shell pkg-config --libs xcb xcb-keysyms) -lpthread -L ledsim -lledsim
+SIMLDFLAGS := $(shell pkg-config --libs xcb xcb-keysyms) -lpthread -L $(OUTDIR) -lledsim
 
 $(OUTDIR)/%.o: $(ARDUINO_CORE_PATH)/%.cpp
 	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $@
@@ -84,13 +84,19 @@ $(OUTDIR)/libled.a: $(OUTDIR)/libled.o
 $(OUTDIR)/libled.o: libled.c led.h
 	gcc -Wall -c -I. $(LIBLEDCFLAGS) -o $@ $< $(LIBLEDLDFLAGS)
 
+$(OUTDIR)/libledsim.a: $(OUTDIR)/ledsim.o
+	ar r $@ $<
+
+$(OUTDIR)/ledsim.o: ledsim.c led.h Makefile
+	gcc $(SIMCFLAGS) -c -o $@ $<
+
 $(OUTDIR)/testlib: testlib.c led.h $(OUTDIR)/libled.a
 	gcc -Wall -I. -o $@ $< $(OUTDIR)/libled.a $(LIBCONFIGLDFLAGS)
 
-$(OUTDIR)/testlibsim: testlib.c led.h
+$(OUTDIR)/testlibsim: testlib.c led.h $(OUTDIR)/libledsim.a
 	gcc -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS)
 
-$(OUTDIR)/warsim: war.c led.h
+$(OUTDIR)/warsim: war.c led.h $(OUTDIR)/libledsim.a
 	gcc -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS)
 
 $(OUTDIR)/makemap: makemap.c led.h
