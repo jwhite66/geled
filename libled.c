@@ -17,8 +17,8 @@ typedef struct
 
 typedef struct
 {
-    char *port_name;
     int fd;
+    const char *portname;
     unsigned long writes;
     int confirm_every;
     config_t config;
@@ -31,7 +31,7 @@ typedef struct
 
 #include "led.h"
 
-static int open_port(char *port_name)
+static int open_port(const char *port_name)
 {
     int fd;
     struct termios options;
@@ -261,6 +261,13 @@ serial_t *led_init(void)
         }
     }
 
+    ser->portname = "/dev/ttyUSB0";
+    config_lookup_string(&ser->config, "ttyname", &ser->portname);
+
+    ser->fd = open_port(ser->portname);
+    if (ser->fd == -1)
+        return NULL;
+
     return ser;
 }
 
@@ -273,10 +280,12 @@ void led_get_size(serial_t *ser, int *wide, int *high)
 
 void led_set_pixel(serial_t *ser, int x, int y, int bright, int r, int g, int b)
 {
+    unsigned char buf[4];
     bulb_map_t *bulb = ser->bulb_map + (y * ser->width) + x;
+    build_bulb(buf, bulb->string, bulb->addr, bright, r, g, b, 0);
+    writebuf(ser, buf, sizeof(buf));
     printf("x %d, y %x - [String %d|Addr %d|bright 0x%x|r 0x%x|g 0x%x|b 0x%x]\n",
         x, y, bulb->string, bulb->addr, bright, r, g, b);
-        
 }
 
 void led_term(serial_t *ser)
