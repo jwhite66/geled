@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/fcntl.h>
 #include <pthread.h>
+#include <math.h>
 #include <errno.h>
 
 #include <sys/param.h>
@@ -75,8 +76,8 @@ int g_quit = 0;
 #define BULLET_SPEED 0.2
 
 #define MAX_SPEED   1.5
-#define FRICTION    .005
-#define ACCELERATION .1
+#define FRICTION    .01
+#define ACCELERATION .2
 
 bullet_t g_bullets[MAX_BULLETS];
 int g_bullet_count = 0;
@@ -289,17 +290,42 @@ int move_bullet(LED_HANDLE_T h, bullet_t *bullet)
     return 0;
 }
 
+void position_bullet(dude_t *dude, bullet_t *bullet)
+{
+    bullet->dx = dude->dx + BULLET_SPEED * X_ORIENT(dude->orientation);
+    bullet->dy = dude->dy + BULLET_SPEED * Y_ORIENT(dude->orientation);
+    bullet->x = round(wrap_x(dude->x, X_ORIENT(dude->orientation)));
+    bullet->y = round(wrap_y(dude->y, Y_ORIENT(dude->orientation)));
+}
+
+int limit_bullet(dude_t *dude)
+{
+    int me;
+    int i;
+
+    for (i = 0, me = 0; i < g_bullet_count; i++)
+        if (g_bullets[i].id == dude->id)
+        {
+            me++;
+            if (me >= (MAX_BULLETS / 2))
+                return 1;
+
+        }
+
+    return 0;
+}
+
 void fire_bullet(LED_HANDLE_T h, dude_t *dude)
 {
     if (g_bullet_count == MAX_BULLETS)
         return;
 
+    if (limit_bullet(dude))
+        return;
+
     bullet_t *bullet = &g_bullets[g_bullet_count++];
     bullet->id = dude->id;
-    bullet->dx = dude->dx + BULLET_SPEED * X_ORIENT(dude->orientation);
-    bullet->dy = dude->dy + BULLET_SPEED * Y_ORIENT(dude->orientation);
-    bullet->x = (int) wrap_x((int)dude->x, X_ORIENT(dude->orientation));
-    bullet->y = (int) wrap_y((int)dude->y, Y_ORIENT(dude->orientation));
+    position_bullet(dude, bullet);
 }
 
 
