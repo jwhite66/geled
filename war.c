@@ -8,6 +8,8 @@
 #include <pthread.h>
 #include <errno.h>
 
+#include <sys/param.h>
+
 
 #if defined(SIMULATOR)
 #include <X11/keysym.h>
@@ -279,7 +281,6 @@ void right(LED_HANDLE_T h, dude_t *dude)
 #if defined(SIMULATOR)
 void my_callback(LED_HANDLE_T h, unsigned long key)
 {
-    printf("Key 0x%lx\n", key);
     if (key == 'q')
         g_quit++;
 
@@ -313,15 +314,22 @@ void my_callback(LED_HANDLE_T h, unsigned long key)
 
 pixel_t * compute_explosion(explosion_t *exp, int x, int y)
 {
-    static pixel_t colors[2] =
-    {
-        { 0xc0, 0, 0xf, 0 },
-        { 0x80, 0, 5, 0 }
-    };
+    static pixel_t color;
 
     if (x == 0 && y == 0)
-        return &colors[1];
-    return &colors[0];
+        color.bright = 0xc0;
+    else
+        color.bright = 0x80;
+
+    color.r = (rand() % 4) + 12;
+    color.g = rand() % 4;
+    color.b = 0;
+
+    color.bright -= exp->tick * 8;
+    if (color.bright < 0)
+        color.bright = 0;
+
+    return &color;
 }
 
 int draw_explosion(LED_HANDLE_T h, explosion_t *exp)
@@ -331,6 +339,9 @@ int draw_explosion(LED_HANDLE_T h, explosion_t *exp)
         for (j = -1 * EXPLOSION_RADIUS; j <= EXPLOSION_RADIUS; j++)
         {
             pixel_t *pixel = compute_explosion(exp, i, j);
+            if (exp->tick ==  (EXPLOSION_LIFE_CYCLE - 1))
+                pixel->bright = pixel->r = pixel->g = pixel->b = 0;
+
             if (exp->x + i >= 0 && exp->x + i < g_wide &&
                 exp->y + j >= 0 && exp->y + j < g_high)
                 led_set_pixel(h, exp->x + i, exp->y + j,
@@ -339,15 +350,36 @@ int draw_explosion(LED_HANDLE_T h, explosion_t *exp)
 
     exp->tick++;
 
+
     if (exp->tick >= EXPLOSION_LIFE_CYCLE)
         return 1;
 
     return 0;
 }
 
+void delete_bullet(int bullno)
+{
+    if (g_bullet_count == 0)
+        return;
+
+    if (bullno < (g_bullet_count - 1))
+        memcpy(g_bullets + bullno, g_bullets + bullno + 1,
+            (g_bullet_count - bullno) * sizeof(g_bullets[0]));
+    g_bullet_count--;
+}
+
+int bullets_collide(bullet_t *a, bullet_t *b)
+{
+    if (a->id != b->id && (int) a->x == (int) b->x &&
+       (int) a->y == (int) b->y)
+       return 1;
+
+    return 0;
+}
+
 void move_stuff(LED_HANDLE_T h)
 {
-    int i;
+    int i, j;
 
     for (i = 0; i < g_explosion_count; i++)
     {
@@ -364,10 +396,31 @@ void move_stuff(LED_HANDLE_T h)
     {
         if (move_bullet(h, &g_bullets[i]))
         {
-            if (i < (g_bullet_count - 1))
-                g_bullets[i] = g_bullets[g_bullet_count - 1];
-            g_bullet_count--;
+            delete_bullet(i);
         }
+    }
+
+    for (i = 0; i < g_bullet_count; i++)
+    {
+        for (j = 0; j < g_bullet_count; j++)
+            if (i == j)
+                break;
+            else
+            {
+                if (bullets_collide(&g_bullets[i], &g_bullets[j]))
+                {
+                    if (g_explosion_count < MAX_EXPLOSIONS)
+                    {
+                        g_explosions[g_explosion_count].x = (int) g_bullets[i].x;
+                        g_explosions[g_explosion_count].y = (int) g_bullets[i].y;
+                        g_explosions[g_explosion_count].tick = 0;
+                        g_explosion_count++;
+                    }
+
+                    delete_bullet(MAX(i, j));
+                    delete_bullet(MIN(i, j));
+                }
+            }
     }
 }
 
@@ -408,8 +461,6 @@ static void fifo_thread(fifo_t *f)
                     buf[strlen(buf) - 1] = '\0';
             }
 
-            printf("Read [%s], going to %p\n", buf, f->callback);
-
             (*f->callback)(f->first_parm, buf);
         }
     }
@@ -447,7 +498,6 @@ void fifo_callback(void *parm, void *p)
     LED_HANDLE_T h = (LED_HANDLE_T) parm;
     int dude;
     char buf[MAX_COMMAND_LEN];
-    printf("Callback of %s\n", (char *) p);
     sscanf(p, "%d-%s\n", &dude, buf);
     if (strcasecmp(buf, "left") == 0)
         left(h, &g_dudes[dude]);
@@ -489,17 +539,12 @@ int main (int argc, char *argv[])
     g_dudes[RED_DUDE].y = g_high - 1;
     g_dudes[RED_DUDE].x = g_wide - 1;
 
-    g_explosions[g_explosion_count].x = 5;
-    g_explosions[g_explosion_count].y = 3;
-    g_explosions[g_explosion_count].tick = 0;
-    //g_explosion_count++;
-
     draw_dudes(p);
     while (! g_quit)
     {
-        printf("tick\n");
         usleep(100000);
         move_stuff(p);
+        draw_dudes(p);
     }
 
     led_term(p);
