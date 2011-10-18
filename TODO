@@ -2,10 +2,6 @@
 
 --- Game todo ---
 Really should use a mutex or something to avoid thread clash
-Find a config file processing library, add a config file for lights
-  libconfig seems okay
-Make a 'real' library for the strings
-Find a wireless card?
 Make an explosions array (process explosions first)
 Put in place max velocity
 Put in place some friction to slow down dudes
