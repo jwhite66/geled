@@ -65,12 +65,18 @@ typedef struct
 #define BLUE_DUDE   0
 #define RED_DUDE    1
 
+#define MAX_HITS    3
+
 dude_t g_dudes[2];
 
 int g_quit = 0;
 
 #define MAX_BULLETS 10
 #define BULLET_SPEED 0.2
+
+#define MAX_SPEED   1.5
+#define FRICTION    .005
+#define ACCELERATION .1
 
 bullet_t g_bullets[MAX_BULLETS];
 int g_bullet_count = 0;
@@ -83,6 +89,26 @@ int g_explosion_count = 0;
 
 int g_wide = 0;
 int g_high = 0;
+
+void reset_field(LED_HANDLE_T h)
+{
+    int x, y;
+
+    g_bullet_count = g_explosion_count = 0;
+
+    memset(&g_dudes[BLUE_DUDE], 0, sizeof(g_dudes[BLUE_DUDE]));
+    memset(&g_dudes[RED_DUDE], 0, sizeof(g_dudes[RED_DUDE]));
+    memset(&g_bullets, 0, sizeof(g_bullets));
+    g_dudes[BLUE_DUDE].id = BLUE_DUDE;
+    g_dudes[BLUE_DUDE].orientation = ORIENT_EAST;
+    g_dudes[RED_DUDE].id = RED_DUDE;
+    g_dudes[RED_DUDE].orientation = ORIENT_WEST;
+    g_dudes[RED_DUDE].y = g_high - 1;
+    g_dudes[RED_DUDE].x = g_wide - 1;
+    for (y = 0; y < g_high; y++)
+        for (x = 0; x < g_wide; x++)
+            led_set_pixel(h, x, y, 0, 0, 0, 0);
+}
 
 double wrap_x(double x, double dx)
 {
@@ -109,7 +135,7 @@ double wrap_y(double y, double dy)
 
 pixel_t *get_dude_color(dude_t *dude)
 {
-    static pixel_t colors[2][3] =
+    static pixel_t colors[2][MAX_HITS] =
     {
         {
             { 0xc0, 0, 0, 0xf },
@@ -188,13 +214,34 @@ void move_dude(LED_HANDLE_T h, dude_t *dude)
 void accelerate_dude(LED_HANDLE_T h, dude_t *dude)
 {
     if (dude->orientation == ORIENT_NORTH)
-        dude->dy -= .1;
+        dude->dy -= ACCELERATION;
     if (dude->orientation == ORIENT_SOUTH)
-        dude->dy += .1;
+        dude->dy += ACCELERATION;
     if (dude->orientation == ORIENT_EAST)
-        dude->dx += .1;
+        dude->dx += ACCELERATION;
     if (dude->orientation == ORIENT_WEST)
-        dude->dx -= .1;
+        dude->dx -= ACCELERATION;
+
+    if (dude->dx > MAX_SPEED)
+        dude->dx = MAX_SPEED;
+    if (dude->dy > MAX_SPEED)
+        dude->dy = MAX_SPEED;
+    if (dude->dx < (-1 * MAX_SPEED))
+        dude->dx = (-1 * MAX_SPEED);
+    if (dude->dy < (-1 * MAX_SPEED))
+        dude->dy = (-1 * MAX_SPEED);
+}
+
+void friction_dude(dude_t *dude)
+{
+    if (dude->dx < 0)
+        dude->dx += FRICTION;
+    if (dude->dy < 0)
+        dude->dy += FRICTION;
+    if (dude->dx > 0)
+        dude->dx -= FRICTION;
+    if (dude->dy > 0)
+        dude->dy -= FRICTION;
 }
 
 void erase_bullet(LED_HANDLE_T h, bullet_t *bullet)
@@ -377,6 +424,33 @@ int bullets_collide(bullet_t *a, bullet_t *b)
     return 0;
 }
 
+int hit_dude(bullet_t *b, dude_t *d)
+{
+    if (b->id != d->id &&
+        (int) b->x == (int) d->x &&
+        (int) b->y == (int) d->y)
+    {
+        d->hits++;
+        return 1;
+    }
+
+    return 0;
+}
+
+void show_loser(LED_HANDLE_T h, int dude)
+{
+    int x, y;
+
+    for (y = 0; y < g_high; y++)
+        for (x = 0; x < g_wide; x++)
+        {
+            led_set_pixel(h, x, y, MAX_BRIGHT, dude == BLUE_DUDE ? 15 : 0, 0, dude == BLUE_DUDE ? 0 : 15);
+            usleep(20000);
+        }
+    reset_field(h);
+}
+
+
 void move_stuff(LED_HANDLE_T h)
 {
     int i, j;
@@ -422,6 +496,23 @@ void move_stuff(LED_HANDLE_T h)
                 }
             }
     }
+
+    for (i = 0; i < g_bullet_count; i++)
+    {
+        for (j = 0; j < sizeof(g_dudes) / sizeof(g_dudes[0]); j++)
+            if (hit_dude(&g_bullets[i], &g_dudes[j]))
+            {
+                delete_bullet(i);
+                if (g_dudes[j].hits >= MAX_HITS)
+                {
+                    show_loser(h, j);
+                    break;
+                }
+            }
+    }
+
+    friction_dude(&g_dudes[BLUE_DUDE]);
+    friction_dude(&g_dudes[RED_DUDE]);
 }
 
 
@@ -529,16 +620,7 @@ int main (int argc, char *argv[])
         exit(1);
     }
 
-    memset(&g_dudes[BLUE_DUDE], 0, sizeof(g_dudes[BLUE_DUDE]));
-    memset(&g_dudes[RED_DUDE], 0, sizeof(g_dudes[RED_DUDE]));
-    memset(&g_bullets, 0, sizeof(g_bullets));
-    g_dudes[BLUE_DUDE].id = BLUE_DUDE;
-    g_dudes[BLUE_DUDE].orientation = ORIENT_EAST;
-    g_dudes[RED_DUDE].id = RED_DUDE;
-    g_dudes[RED_DUDE].orientation = ORIENT_WEST;
-    g_dudes[RED_DUDE].y = g_high - 1;
-    g_dudes[RED_DUDE].x = g_wide - 1;
-
+    reset_field(p);
     draw_dudes(p);
     while (! g_quit)
     {

@@ -2,9 +2,6 @@
 
 --- Game todo ---
 Really should use a mutex or something to avoid thread clash
-Make an explosions array (process explosions first)
-Put in place max velocity
-Put in place some friction to slow down dudes
 
 
 --- Long Term ---
