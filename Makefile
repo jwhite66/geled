@@ -107,6 +107,8 @@ $(OUTDIR)/scrollsim: scroll.c led.h $(OUTDIR)/libledsim.a
 
 $(OUTDIR)/warsim: war.c led.h $(OUTDIR)/libledsim.a
 	gcc -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS) -lm
+$(OUTDIR)/war: war.c led.h $(OUTDIR)/libled.a
+	gcc -Wall -I. $(LIBLEDCFLAGS) -o $@ $<  $(LIBLEDLDFLAGS) -L$(OUTDIR) -lled -l pthread $(LIBCONFIGLDFLAGS) -lm
 
 $(OUTDIR)/makemap: makemap.c led.h
 	gcc -Wall -o $@ -I. -I $(OUTDIR) -I /usr/include/freetype2 $< -lfreetype -lm
