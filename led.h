@@ -1,6 +1,7 @@
 #define LED_CFG_FILE        "led.cfg"
 
 #define MAX_BRIGHT          0xCC
+#define MAX_RGB             0xF
 #define ADDR_COUNT          50
 #define STRING_COUNT        6
 #define ALL_STRINGS_MASK    0x3F

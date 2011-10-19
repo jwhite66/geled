@@ -1,5 +1,28 @@
+geled
+=====
+
+This project contains code to control an Arduino to drive multiple
+strings of GE color effects lights in interesting ways.
+
+The interesting components are as follows:
+  led.pde   -   Code to run on the Arduino itself
+  drive.c   -   Code to 'drive' the Arduino, using the
+                serial port to pass simple messages
+  libled.c  -   A library to simplify the process of
+                setting pixels; it uses led.cfg to
+                specify an x/y to string/addr mapping.
+  ledsim.c  -   A library to to simulate libled so
+                you can do development without a string of lights.
+  war.c     -   A very simple 'space war' game for two
+                that uses libled or ledsim.
+               
+
+
+Requirements
+============
+
 This project was written by a Debian Linux user and, as of this date,
-has only every been run on a Debian Linux system.
+has only every been run on a Debian Linux system. 
 
 However, the code is fairly portable.  If you're clever and patient,
 you can likely get it to work for you.
@@ -31,15 +54,18 @@ I also downloaded the latest Arduino development environment (0022)
 and put a copy of that into the project subdirectory.  I edited the
 Makefile to point at that path.
 
-But once that was done, a simple:
+
+Usage:
+=====
+This commmand:
   make && make upload
-programmed the Arduino.
+should result in compiling + uploading the program to the Arduino.
 
 And
   ./drive init
   ./drive status
   ./drive chase
 
-all did interesting things.  Note that
+Will make the Arduino do interesting things.  Note that
   make reset
 is also quite handy.

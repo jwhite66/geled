@@ -50,6 +50,9 @@ LIBCONFIGLDFLAGS := $(shell pkg-config --libs libconfig)
 SIMCFLAGS  := $(shell pkg-config --cflags xcb xcb-keysyms)
 SIMLDFLAGS := $(shell pkg-config --libs xcb xcb-keysyms) -lpthread -L $(OUTDIR) -lledsim
 
+FTCFLAGS  := $(shell pkg-config --cflags freetype2)
+FTLDFLAGS := $(shell pkg-config --libs freetype2)
+
 $(OUTDIR)/%.o: $(ARDUINO_CORE_PATH)/%.cpp
 	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $@
 
@@ -95,6 +98,12 @@ $(OUTDIR)/testlib: testlib.c led.h $(OUTDIR)/libled.a
 
 $(OUTDIR)/testlibsim: testlib.c led.h $(OUTDIR)/libledsim.a
 	gcc -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS)
+
+$(OUTDIR)/scroll: scroll.c led.h $(OUTDIR)/libled.a
+	gcc -Wall -I. $(FTCFLAGS) -o $@ $< $(OUTDIR)/libled.a $(LIBCONFIGLDFLAGS) $(FTLDFLAGS)
+
+$(OUTDIR)/scrollsim: scroll.c led.h $(OUTDIR)/libledsim.a
+	gcc -Wall -I. -DSIMULATOR $(FTCFLAGS) $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS) $(FTLDFLAGS)
 
 $(OUTDIR)/warsim: war.c led.h $(OUTDIR)/libledsim.a
 	gcc -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS) -lm

@@ -12,3 +12,5 @@ libled.a
 libledsim.a
 testlib
 testlibsim
+scroll
+scrollsim
