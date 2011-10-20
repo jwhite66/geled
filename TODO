@@ -1,7 +1,14 @@
 * Provide a flash ram setting to perform init on boot
+* Understand boot initialization
+* The serial protocol suffers if you ^C when < chars are sent;
+  so we need a 'resync' process.  A string of 8 0xff followed by an 0x0
+  seems like a reasonable choice.
+* Revamp the web site to simplify the choices, and enable ledscroll
+  to display a message.
 
 --- Game todo ---
 Really should use a mutex or something to avoid thread clash
+Set the umask before we open the fifo
 
 
 --- Long Term ---
