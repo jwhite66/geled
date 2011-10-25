@@ -588,7 +588,7 @@ int fifo_init(const char *pathname, fifo_callback_t callback, fifo_t *f, void * 
     pthread_attr_t attr;
     int rc;
 
-    rc = mkfifo(pathname, S_IRWXU | S_IRWXG);
+    rc = mkfifo(pathname, S_IRWXU | S_IRWXG | S_IRWXO);
     if (rc == -1 && errno != EEXIST)
         return -1;
 
@@ -640,6 +640,7 @@ int main (int argc, char *argv[])
 
     led_get_size(p, &g_wide, &g_high);
 
+    umask(0);
     if (fifo_init(FIFO_PATH, &fifo_callback, &f, p) != 0)
     {
         fprintf(stderr, "Error opening command fifo\n");
