@@ -201,8 +201,6 @@ void compute_x_y(int addr, long start, long end, long fromx, long fromy, long to
 
     *x = fromx + col;
     *y = fromy - rowup;
-printf("Computed %dx%d for [addr %d|start %ld|end %ld|fromx %ld|fromy %ld|tox %ld|toy %ld]\n",
-  *x, *y, addr, start, end, fromx, fromy, tox, toy);
 }
 
 
@@ -286,8 +284,6 @@ void led_set_pixel(serial_t *ser, int x, int y, int bright, int r, int g, int b)
     bulb_map_t *bulb = ser->bulb_map + (y * ser->width) + x;
     build_bulb(buf, bulb->string, bulb->addr, bright, r, g, b, 0);
     writebuf(ser, buf, sizeof(buf));
-    printf("x %d, y %x - [String %d|Addr %d|bright 0x%x|r 0x%x|g 0x%x|b 0x%x]\n",
-        x, y, bulb->string, bulb->addr, bright, r, g, b);
 }
 
 void led_term(serial_t *ser)
