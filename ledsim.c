@@ -11,7 +11,7 @@
 
 #define PIXELS_WIDE     17
 #define PIXELS_HIGH     5
-#define PIXELS_PER_PIXEL    80
+#define PIXELS_PER_PIXEL    40
 
 typedef struct
 {
@@ -38,10 +38,6 @@ typedef struct xinfo_struct
 #define LED_HANDLE_T    xinfo_t *
 
 #include "led.h"
-
-#define PIXELS_WIDE     17
-#define PIXELS_HIGH     5
-#define PIXELS_PER_PIXEL    80
 
 static unsigned long map_pixel_to_x_color(xinfo_t *xinfo, pixel_t *pixel)
 {
