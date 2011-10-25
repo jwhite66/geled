@@ -76,7 +76,7 @@ int g_quit = 0;
 #define BULLET_SPEED 0.2
 
 #define MAX_SPEED   1.5
-#define FRICTION    .01
+#define FRICTION    .005
 #define ACCELERATION .2
 
 bullet_t g_bullets[MAX_BULLETS];
@@ -141,11 +141,11 @@ pixel_t *get_dude_color(dude_t *dude)
         {
             { 0xc0, 0, 0, 0xf },
             { 0xc0, 5, 0, 0xf },
-            { 0xc0, 0xf, 0, 5 }
+            { 0xc0, 15, 2, 0 }
         },
         {
             { 0xc0, 0xf, 0, 0 },
-            { 0xc0, 0xf, 0, 5 },
+            { 0xc0, 15, 2, 0 },
             { 0xc0, 5, 0, 0xf }
         }
     };
