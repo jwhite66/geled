@@ -99,10 +99,10 @@ $(OUTDIR)/testlib: testlib.c led.h $(OUTDIR)/libled.a
 $(OUTDIR)/testlibsim: testlib.c led.h $(OUTDIR)/libledsim.a
 	gcc -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS)
 
-$(OUTDIR)/scroll: scroll.c led.h $(OUTDIR)/libled.a
+$(OUTDIR)/ledscroll: ledscroll.c led.h $(OUTDIR)/libled.a
 	gcc -Wall -I. $(FTCFLAGS) -o $@ $< $(OUTDIR)/libled.a $(LIBCONFIGLDFLAGS) $(FTLDFLAGS)
 
-$(OUTDIR)/scrollsim: scroll.c led.h $(OUTDIR)/libledsim.a
+$(OUTDIR)/ledscrollsim: ledscroll.c led.h $(OUTDIR)/libledsim.a
 	gcc -Wall -I. -DSIMULATOR $(FTCFLAGS) $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS) $(FTLDFLAGS)
 
 $(OUTDIR)/warsim: war.c led.h $(OUTDIR)/libledsim.a
