@@ -13,7 +13,13 @@ $init =    $form->addElement('submit', 'init', array('value' => 'Init'));
 $clear =   $form->addElement('submit', 'clear', array('value' => 'Clear'));
 $chase =   $form->addElement('submit', 'chase', array('value' => 'Chase'));
 $reset =   $form->addElement('submit', 'reset', array('value' => 'Reset'));
+$warstat = `ps auxwwwwww | grep war | grep -v grep`;
+if (isset($warstat) && strlen($warstat) > 0)
+    $war =   $form->addElement('submit', 'war', array('value' => 'Stop War'));
+else
+    $war =   $form->addElement('submit', 'war', array('value' => 'Start War'));
 
+/*
 $str =    $form->addElement('text', 'str', array('size' => 5, 'maxlength' => 5));
 $str->setLabel('Enter String Number, or range separated by dash');
 
@@ -38,6 +44,11 @@ $delay ->setLabel('Enter delay in microseconds between instructions');
 $bulb = $form->addElement('submit', 'bulb', array('value' => 'Set lights!'));
 
 
+*/
+
+$ledscrollstat = `ps auxwwwwww | grep ledscroll | grep -v grep`;
+
+$form->addElement('static', 'mymess', array('content' => 'This is a static message.'));
 $display = $form->addElement('submit', 'display', array('value' => 'Toggle Display'));
 
 $message = $form->addElement('text', 'message', array('size' => 50, 'maxlength' => 255));
@@ -48,45 +59,53 @@ if (strlen($message->getValue()) > 0 && $change_message->getValue() == 'Change M
 {
     echo "<p>Changing Message to " . $message->getValue() . "</p>";
     echo "<pre>\n";
-    $cmd = "rm -f /tmp/www-hack/message.h";
-    echo $cmd . ":\n";
+    $cmd = "pkill ledscroll";
+    echo "$cmd<br>";
     system($cmd);
-    $cmd = "mkdir /tmp/www-hack";
-    echo $cmd . ":\n";
-    system($cmd);
-    $cmd = "OUTDIR=/tmp/www-hack MESSAGE=" . escapeshellarg($message->getValue()) . " make";
-    echo $cmd . ":\n";
-    system($cmd);
-    $cmd = "OUTDIR=/tmp/www-hack make upload";
-    echo $cmd . ":\n";
+    $cmd = "nohup ./ledscroll elegante_pixel.ttf '" . $message->getValue() . "' >/dev/null 2>&1 &";
+    echo "<br>$cmd : <br>";
     system($cmd);
     echo "</pre><p>...done.</p>";
 }
 
 $cmd = "./drive ";
-if (strlen($str->getValue()) > 0)
+$description = NULL;
+
+if (isset($war) && strlen($war ->getValue()) > 0)
+    if (isset($warstat) && strlen($warstat) > 0)
+    {
+        $description = "Stopping war program and ledscroll er";
+        $cmd = "pkill war ; pkill ledscroll";
+    }
+    else
+    {
+        $description = "Starting war program...";
+        $cmd = "nohup ./war >/dev/null 2>&1 &";
+    }
+
+
+if (isset($str) && strlen($str->getValue()) > 0)
     $cmd .= "--string=" . $str->getValue() . " ";
 
-if (strlen($addr->getValue()) > 0)
+if (isset($addr) && strlen($addr->getValue()) > 0)
     $cmd .= "--addr=" . $addr->getValue() . " ";
 
-if (strlen($bright->getValue()) > 0)
+if (isset($bright) && strlen($bright->getValue()) > 0)
     $cmd .= "--bright=" . $bright->getValue() . " ";
 
-if (strlen($red->getValue()) > 0)
+if (isset($red) && strlen($red->getValue()) > 0)
     $cmd .= "--red=" . $red->getValue() . " ";
 
-if (strlen($green->getValue()) > 0)
+if (isset($green) && strlen($green->getValue()) > 0)
     $cmd .= "--green=" . $green->getValue() . " ";
 
-if (strlen($blue->getValue()) > 0)
+if (isset($blue) && strlen($blue->getValue()) > 0)
     $cmd .= "--blue=" . $blue->getValue() . " ";
 
-if (strlen($delay->getValue()) > 0)
+if (isset($delay) && strlen($delay->getValue()) > 0)
     $cmd .= "--delay=" . $delay->getValue() . " ";
 
 
-$description = NULL;
 if ($init->getValue() == "Init")
 {
     $description = "Initializing LEDs";
@@ -111,12 +130,13 @@ else if ($reset->getValue() == "Reset")
     system($cmd);
     $cmd = "OUTDIR=/tmp/www-hack make reset 2>&1";
 }
-else if ($display->getValue() == "Toggle Display")
+else if (isset($display) && $display->getValue() == "Toggle Display")
 {
     $description = "Toggle display of message";
     $cmd .= "display";
 }
-else if ($bulb->getValue() == "Set lights!")
+
+else if (isset($bulb) && $bulb->getValue() == "Set lights!")
 {
     $description = "Set the lights on";
     $cmd .= "bulb";
