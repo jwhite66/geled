@@ -191,6 +191,17 @@ void perform_cmd(int fd, int cmd)
         fprintf(stderr, "Error getting okay during cmd\n");
 }
 
+void perform_sync(int fd)
+{
+    unsigned char out[9];
+    memset(out, COMMAND_SYNC, sizeof(out));
+    out[8] = 0;
+    raw_writebuf(fd, out, sizeof(out));
+
+    if (getok(fd, 5, 1000 * 1000) != 0)
+        fprintf(stderr, "Error getting okay during cmd\n");
+}
+
 int perform_custom(int fd, char *tag)
 {
     int string;
@@ -255,6 +266,7 @@ void usage(char *argv0)
     printf("\nCommand can be one of:\n");
     printf("\n  bulb:  Write bulbs as per specificed colors and ranges (default)\n");
     printf("  init:    Initialize the bulbs\n");
+    printf("  sync:    Synchornize with the arduino\n");
     printf("  status:  Print a sort status message\n");
     printf("  clear:   Clear the bulbs on all strings\n");
     printf("\nAdditional options that apply to bulb mode:\n");
@@ -410,6 +422,8 @@ int main(int argc, char *argv[])
             perform_cmd(fd, COMMAND_CHASE);
         else if (strcmp(argv[i], "display") == 0)
             perform_cmd(fd, COMMAND_SCROLL_DISPLAY);
+        else if (strcmp(argv[i], "sync") == 0)
+            perform_sync(fd);
         else if (strcmp(argv[i],"bulb") == 0)
             write_bulbs = 1;
         else if (perform_custom(fd, argv[i]) != 0)

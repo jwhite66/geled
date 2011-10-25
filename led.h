@@ -58,6 +58,9 @@
 #define COMMAND_CHASE           (BULB_FLAG_COMMAND | 5)
 #define COMMAND_SCROLL_DISPLAY  (BULB_FLAG_COMMAND | 6)
 
+#define COMMAND_SYNC            0xFF
+
+
 /*----------------------------------------------------------------------------
 **  Structure definitions
 **--------------------------------------------------------------------------*/

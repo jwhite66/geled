@@ -477,6 +477,17 @@ void chase(void)
     }
 }
 
+void flush_sync(void)
+{
+    uint8_t c;
+    do
+    {
+        c = Serial.read();
+    }
+    while (c == COMMAND_SYNC);
+}
+
+
 void process_command(const uint8_t *data)
 {
     switch(BULB_FLAG_ADDRESS(data))
@@ -488,6 +499,10 @@ void process_command(const uint8_t *data)
             Serial.print(data[1]);
             Serial.print(data[2]);
             Serial.print(data[3]);
+            break;
+
+        case COMMAND_SYNC:
+            flush_sync();
             break;
 
         case COMMAND_INIT:

@@ -207,6 +207,7 @@ void compute_x_y(int addr, long start, long end, long fromx, long fromy, long to
 
 serial_t *led_init(void)
 {
+    unsigned char buf[9];
     serial_t *ser = malloc(sizeof(*ser));
     memset(ser, 0, sizeof(*ser));
 
@@ -267,6 +268,10 @@ serial_t *led_init(void)
     ser->fd = open_port(ser->portname);
     if (ser->fd == -1)
         return NULL;
+
+    memset(buf, COMMAND_SYNC, sizeof(buf));
+    buf[sizeof(buf) - 1] = 0;
+    write(ser->fd, buf, sizeof(buf));
 
     return ser;
 }
