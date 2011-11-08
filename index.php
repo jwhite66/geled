@@ -53,7 +53,17 @@ $display = $form->addElement('submit', 'display', array('value' => 'Toggle Displ
 
 $message = $form->addElement('text', 'message', array('size' => 50, 'maxlength' => 255));
 $change_message = $form->addElement('submit', 'change_message', array('value' => 'Change Message'));
+$stop_message = $form->addElement('submit', 'stop_message', array('value' => 'Stop Message'));
 
+
+if ($stop_message->getValue() == 'Stop Message')
+{
+    echo "<pre>\n";
+    $cmd = "pkill ledscroll";
+    echo "$cmd<br>";
+    system($cmd);
+    echo "</pre><p>...done.</p>";
+}
 
 if (strlen($message->getValue()) > 0 && $change_message->getValue() == 'Change Message')
 {
