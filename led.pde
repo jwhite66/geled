@@ -309,7 +309,8 @@ uint8_t g_scroll_redshift = 0;
 uint8_t g_scroll_greenshift = 0;
 uint8_t g_scroll_bright = MAX_BRIGHT;
 
-uint8_t g_scrolling = 0;
+uint8_t g_scrolling = 1;
+uint8_t g_init_at_start = 1;
 
 void map_xy_to_string_addr(int x, int y, int *string, int *addr)
 {
@@ -561,6 +562,12 @@ void setup()
     **----------------------------------------------------------------------*/
     start_timer1();
     DDRB = ALL_STRINGS_MASK;
+
+    if (g_init_at_start)
+    {
+        delay(2000);
+        init(10);
+    }
 }
 
 
