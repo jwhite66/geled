@@ -511,11 +511,14 @@ void process_command(const uint8_t *data)
             break;
 
         case COMMAND_STATUS:
-            Serial.print("AVR LED alive ");
+            Serial.println("AVR LED alive.");
             if (g_scrolling)
-                Serial.println("and scrolling.");
+                Serial.println("  Displaying builtin message:");
             else
-                Serial.println("and not scrolling.");
+                Serial.println("  NOT Displaying builtin message:");
+            Serial.print("    ");
+            Serial.println(MESSAGE_TEXT);
+            Serial.print('\0');
             break;
 
         case COMMAND_CLEAR:

@@ -81,27 +81,41 @@ int findone(int fd, int target, long max_usec)
     int rc;
     unsigned char c;
 
-    FD_ZERO(&readfds);
-    FD_SET(fd, &readfds);
-
-    tv.tv_sec = 0;
-    tv.tv_usec = max_usec;
+    if (g_verbose)
+        printf("seeking '%c' in %ld usec, fd %d\n", target, max_usec, fd);
 
     while (1)
     {
-        select(fd + 1, &readfds, NULL, NULL, &tv);
+        FD_ZERO(&readfds);
+        FD_SET(fd, &readfds);
+
+        tv.tv_sec = 0;
+        tv.tv_usec = max_usec;
+
+        rc = select(fd + 1, &readfds, NULL, NULL, &tv);
+        if (rc == 0)
+        {
+            if (g_verbose)
+                printf("Timeout!\n");
+        }
 
         rc = read(fd, &c, sizeof(c));
         if (rc != 1)
             break;
 
         if (c == target)
+        {
             return 1;
+            if (g_verbose)
+                printf("found!\n");
+        }
         else
             write(STDOUT_FILENO, &c, 1);
     }
 
-    return -1;
+    if (g_verbose)
+        printf("not found!\n");
+    return 0;
 }
 
 int raw_writebuf(int fd, unsigned char *out, int size)
@@ -134,6 +148,8 @@ int getok(int fd, int max_tries, long max_delay)
 
     for (i = 0; i < max_tries; i++)
     {
+        if (g_verbose)
+            printf("requesting ok...\n");
         if (raw_writebuf(fd, aok, 4) != 0)
             return -1;
         if (findone(fd, 'O', max_delay) &&
@@ -189,6 +205,17 @@ void perform_cmd(int fd, int cmd)
 
     if (getok(fd, 5, 1000 * 1000) != 0)
         fprintf(stderr, "Error getting okay during cmd\n");
+}
+
+void perform_status(int fd)
+{
+    unsigned char out[4];
+    memset(out, 0, sizeof(out));
+
+    BULB_FLAG_ADDRESS(out) = COMMAND_STATUS;
+    writebuf(fd, out, sizeof(out));
+    if (findone(fd, '\0', 5000 * 1000) <= 0)
+        fprintf(stderr, "Error getting null during cmd\n");
 }
 
 void perform_sync(int fd)
@@ -396,7 +423,10 @@ int main(int argc, char *argv[])
         perror(buf);
     }
 
-    if (getok(fd, 5, 1000 * 1000) < 0)
+    if (g_verbose)
+        printf("..open...\n");
+
+    if (getok(fd, 5, 3000 * 1000) < 0)
     {
         fprintf(stderr, "Error:  could not get an ok back\n");
         return -1;
@@ -417,7 +447,7 @@ int main(int argc, char *argv[])
         else if (strcmp(argv[i], "clear") == 0)
             perform_cmd(fd, COMMAND_CLEAR);
         else if (strcmp(argv[i], "status") == 0)
-            perform_cmd(fd, COMMAND_STATUS);
+            perform_status(fd);
         else if (strcmp(argv[i], "chase") == 0)
             perform_cmd(fd, COMMAND_CHASE);
         else if (strcmp(argv[i], "display") == 0)
