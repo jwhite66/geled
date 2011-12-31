@@ -529,8 +529,13 @@ void process_command(const uint8_t *data)
             chase();
             break;
 
+        case COMMAND_SCROLL_DISPLAY_OFF:
+            g_scrolling = 0;
+            break;
+
         case COMMAND_SCROLL_DISPLAY:
-            g_scrolling = ! g_scrolling;
+            g_scrolling = 1;
+
             if (g_scrolling)
             {
                 g_scroll_blueshift = BULB_BLUESHIFT(data);

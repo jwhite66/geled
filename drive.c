@@ -452,6 +452,8 @@ int main(int argc, char *argv[])
             perform_cmd(fd, COMMAND_CHASE);
         else if (strcmp(argv[i], "display") == 0)
             perform_cmd(fd, COMMAND_SCROLL_DISPLAY);
+        else if (strcmp(argv[i], "displayoff") == 0)
+            perform_cmd(fd, COMMAND_SCROLL_DISPLAY_OFF);
         else if (strcmp(argv[i], "sync") == 0)
             perform_sync(fd);
         else if (strcmp(argv[i],"bulb") == 0)
