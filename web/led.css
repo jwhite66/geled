@@ -1,0 +1,137 @@
+.lights
+{
+    display: block;
+    height: 80px;
+}
+
+.lights img
+{
+    margin:0;
+    float:left;
+    padding:0;
+}
+
+.firstonrow
+{
+    clear: left;
+}
+
+.jtextfill
+{
+    background: transparent;
+}
+
+.bg1
+{
+    background-color: #eee;
+}
+
+.fixedwhole
+{  
+    position: absolute;   
+    display:inline-block;
+    top:0;
+    left: 0;
+    width:800px;
+    height:100%;
+    margin:0;
+    padding:0;
+}
+
+.dynamicwhole
+{  
+    position: absolute;   
+    display:inline-block;
+    top:0;
+    left: 0;
+    width:90%;
+    height:100%;
+    margin-left: 5%;
+    margin-right: 5%;
+}
+
+.content
+{  
+    display:inline-block;
+    margin-top:0;
+    border-radius: .4em;
+    border: 1px solid black;
+    width: 100%;
+}
+
+.topdiv
+{
+    height:15%;
+    margin:0;
+    padding:0;
+}
+
+.tabdiv
+{
+    position:relative;
+    margin:0;
+    top:40%;
+    bottom:100%;
+    height:60%;
+    padding:0;
+    width:80%;
+    margin-left:10%;
+}
+
+.tabdiv UL
+{
+    display:inline-block;
+    position: absolute;   
+    list-style:none;
+    margin:0;
+    padding:0;
+    bottom:0;
+    width:100%;
+    height:100%;
+}
+
+.tabdiv LI 
+{
+    float:left;
+    list-style:none;
+    margin-left: .2em;
+    margin-right: .2em;
+    margin-bottom: 0;
+    padding: .5em;
+    padding-bottom: 0;
+    padding-top: 0;
+    border-top-left-radius: .4em;
+    border-top-right-radius: .4em;
+    border-top: 1px solid black;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+    height:100%;
+}
+
+.tabdiv LI.active
+{
+    border-bottom: 1px solid #eee;
+    z-index: 100;
+}
+
+.tabdiv LI.active A
+{
+    color: #000;
+}
+
+.tabdiv LI A
+{
+    color: #aaa;
+}
+
+.tabdiv LI A:hover
+{
+    color: #357aa0;
+}
+
+.tabdiv a:visited,a:link { text-decoration: none }
+
+
+.tabwidth {
+    width: 15%;
+}
