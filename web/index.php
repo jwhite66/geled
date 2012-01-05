@@ -3,29 +3,22 @@
 
 <?php
     $g_title = "My test web page";
+    include 'common.php';
     include 'headers.php';
-
-    $loading = '<div id="spinner_text">Loading</div><img id="spinner" src="loading.gif" alt="Loading">';
 ?>
-     <script>
-         function refresh_status()
-         {
-             $("#dstatus").html('<?php echo $loading;?>');
-             $.get("webhelper.php?cmd=status", function(data){
-                 $("#dstatus").html(data);
-             });
-         }
-         $(document).ready(function(){
-             $('.jtextfill').textfill({ maxFontPixels: 70, innerTag: 'a' });
-             refresh_status();
-         });
-
-    </script>
-
     </head>
 
+<script>
+     $(document).ready(function(){
+         $('.jtextfill').textfill({ maxFontPixels: 70, innerTag: 'a' });
+         $.get("status.php", function(data){
+             $("#maincontent").html(data);
+         });
+     });
+</script>
+
     <body>
-        <div class="dynamicwhole">
+        <div class="fixedwhole">
 
             <?php include 'logo.php';?>
 
@@ -33,14 +26,9 @@
                 <?php echo menu_html("Status"); ?>
               </div> <!--tabdiv-->
 
-            <div class="content bg1">
-                <div id="status_header">
-                    <span>Status</span>
-                    <div id="dstatus">
-                    </div>
-                </div>
-                <a id="refreshbutton" href="#" onclick="refresh_status(); return false;" class="myButton">Refresh</a>
+            <div id="maincontent" class="content bg1">
             </div> <!--content -->
+
         </div> <!--whole div -->
 
     </body>

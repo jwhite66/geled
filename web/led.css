@@ -1,3 +1,9 @@
+.menufont
+{
+    font-size: 22px;
+    text-align: left;
+}
+
 .lights
 {
     display: block;
@@ -26,20 +32,14 @@
     background-color: #eee;
 }
 
-#status_header
-{
-    margin: 0;
-    margin-left: 50px;
-    margin-top: 10px;
-    font-size: 2em;
-}
-
 #dstatus
 {
-    width: 600px;
-    height: 100px;
+    width: 700px;
+    height: 400px;
     position: relative;
-    left: 100px;
+    left: 50px;
+    margin-top: 10px;
+    margin-bottom: 10px;
     border-radius: .4em;
     border: solid 1xp #000;
     background-color: #fff;
@@ -53,6 +53,7 @@
     float: left;
     margin-left: 50px;
     margin-top: 25px;
+    font-size: 25px;
 }
 
 #spinner

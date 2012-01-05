@@ -2,10 +2,6 @@
         "http://www.w3.org/TR/html4/loose.dtd">
 
 <html>
-<?php
-    if (! isset($g_title))
-        $g_title = "BlockLight Control";
-?>
   
     <head>
     
@@ -29,24 +25,3 @@
         <script src="jquery-textFill-0.1.js"></script>
 
     </head>
-  
-<?php
-
-$g_menus = array("Status", "Control", "Apps", "SpaceWar");
-function menu_html($selected_menu)
-{
-    global $g_menus;
-    $ret = "<ul>\n";
-    foreach($g_menus as $m)
-    {
-        $class="jtextfill bg1 tabwidth";
-        if ($selected_menu == $m)
-            $class .= " active";
-        $ret .= "<li class=\"{$class}\"><a href=\"#\">{$m}</a></li>\n";
-    }
-    $ret .= "</ul>\n";
-
-    return $ret;
-}
-
-?>

@@ -1,5 +1,5 @@
 <?php
-    $dstatus = 'Hi mom';
+    $dstatus = 'Status placeholder';
     sleep(5);
     echo $dstatus;
 /*
