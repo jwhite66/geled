@@ -5,7 +5,7 @@
     $g_title = "My test web page";
     include 'headers.php';
 
-    $loading = '<p>Loading<img src="loading.gif" alt="Loading" align="center"></p>';
+    $loading = '<div id="spinner_text">Loading</div><img id="spinner" src="loading.gif" alt="Loading">';
 ?>
      <script>
          function refresh_status()
@@ -29,15 +29,15 @@
 
             <?php include 'logo.php';?>
 
-            <div class="topdiv">
-
               <div class="tabdiv">
                 <?php echo menu_html("Status"); ?>
               </div> <!--tabdiv-->
-            </div> <!--topdiv-->
 
             <div class="content bg1">
-                <div id="dstatus">
+                <div id="status_header">
+                    <span>Status</span>
+                    <div id="dstatus">
+                    </div>
                 </div>
                 <a id="refreshbutton" href="#" onclick="refresh_status(); return false;" class="myButton">Refresh</a>
             </div> <!--content -->

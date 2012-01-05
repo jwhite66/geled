@@ -1,5 +1,5 @@
 <?php
-    $dstatus = '<h1>Hi mom</h1>';
+    $dstatus = 'Hi mom';
     sleep(5);
     echo $dstatus;
 /*
