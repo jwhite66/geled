@@ -160,7 +160,10 @@ void write_bits(uint8_t **p, uint8_t one_strings, uint8_t zero_strings)
 
 }
 
-void write_raw_bulbs(int count, bulb *bulbs)
+/* Note - the Sketch stuff generates function headers at the top of the file,
+          after all the #includes, so don't use typedefs in prototypes or people
+          won't be able to use Sketches :-(  */
+void write_raw_bulbs(int count, struct bulb_struct *bulbs)
 {
     uint8_t *p;
     int i, j;
