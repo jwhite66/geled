@@ -49,11 +49,11 @@ $bulb = $form->addElement('submit', 'bulb', array('value' => 'Set lights!'));
 $ledscrollstat = `ps auxwwwwww | grep ledscroll | grep -v grep`;
 
 $form->addElement('static', 'mymess', array('content' => 'This is a static message.'));
-$display = $form->addElement('submit', 'display', array('value' => 'Toggle Display'));
+$display = $form->addElement('submit', 'display', array('value' => 'Toggle Builtin Message'));
 
 $message = $form->addElement('text', 'message', array('size' => 50, 'maxlength' => 255));
-$change_message = $form->addElement('submit', 'change_message', array('value' => 'Change Message'));
-$stop_message = $form->addElement('submit', 'stop_message', array('value' => 'Stop Message'));
+$change_message = $form->addElement('submit', 'change_message', array('value' => 'Change/Start External Message'));
+$stop_message = $form->addElement('submit', 'stop_message', array('value' => 'Stop External Message'));
 
 
 if ($stop_message->getValue() == 'Stop Message')
