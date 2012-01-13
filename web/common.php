@@ -13,14 +13,17 @@ function menu_html($selected_menu)
     foreach($g_menus as $m => $p)
     {
         $class="menufont bg1 tabwidth";
+        $id="menu_{$m}";
         $onclick="onclick='
            $.get(\"{$p}\", function(data){
              $(\"#maincontent\").html(data);
-            }); return false;'";
+            }); 
+           
+           return false;'";
 
         if ($selected_menu == $m)
             $class .= " active";
-        $ret .= "<li class=\"{$class}\"><a {$onclick} href=\"#\">{$m}</a></li>\n";
+        $ret .= "<li id=\"{$id}\" class=\"{$class}\"><a {$onclick} href=\"#\">{$m}</a></li>\n";
     }
     $ret .= "</ul>\n";
 
@@ -28,4 +31,3 @@ function menu_html($selected_menu)
 }
 
 ?>
-

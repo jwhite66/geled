@@ -10,7 +10,7 @@
 
 <script>
      $(document).ready(function(){
-         $('.jtextfill').textfill({ maxFontPixels: 70, innerTag: 'a' });
+         $('.jtextfill').textfill({ maxFontPixels: 70, innerTag: 'span' });
          $.get("status.php", function(data){
              $("#maincontent").html(data);
          });
@@ -19,8 +19,9 @@
 
     <body>
         <div class="fixedwhole">
-
-            <?php include 'logo.php';?>
+            <div class="lights">
+                <img src="logo.png">
+            </div>
 
               <div class="tabdiv">
                 <?php echo menu_html("Status"); ?>

@@ -1,0 +1,84 @@
+<div id="statusblock" title="$status_title">
+    <div id="statusleft"><img src="arduino-logo.png"></div>
+    <div id="statusright" class="jtextfill $status_color"><span>$status</span></div>
+</div>
+
+<script> $('.jtextfill').textfill({ maxFontPixels: 70, innerTag: 'span' });</script>
+
+<div id="mstatus">
+   <div id="builtin_message_title">Built in message is <span id="onoff">$display_status_description</span></div>
+   <div id="switch"></div>
+
+   <script type="text/javascript">
+        function change_message()
+        {
+            $.ajax({
+                url: 'webhelper.php?cmd=setmessage&message=' +
+                    encodeURIComponent($('#builtin_message_text').val()),
+                async : false,
+                success: function( data ) 
+                {
+                    alert('Message changed');
+                },
+                error: function( data, textStatus, errorThrown ) 
+                {
+                    alert("Error setting message: " + errorThrown);
+                }
+              });
+        }
+   </script>
+
+   <div id="builtin_message_body">
+   <textarea id="builtin_message_text">$builtin_message</textarea>
+   <input id="builtin_message_button" value="Change builtin message" type="submit" onclick="change_message(); return false;"></input>
+   </div>
+
+   <script type="text/javascript">
+        var switch_okay = false;
+
+        function set_display(cmd)
+        {
+            $.ajax({
+                url: 'webhelper.php?cmd=' + cmd,
+                async : false,
+                dataType : "text",
+                success: function( data ) 
+                {
+                        switch_okay = true;
+                },
+                error: function( data, textStatus, errorThrown ) 
+                {
+                        alert("Error setting display: " + errorThrown);
+                        switch_okay = false;
+                }
+              });
+        }
+
+        $('#switch').iphoneSwitch("$display_status", 
+            function()
+            {
+                set_display('displayon');
+                if (switch_okay) 
+                {
+                    $('#onoff').html('On ');
+                }
+                return switch_okay;
+            },
+            function()
+            {
+                set_display('displayoff');
+                if (switch_okay) 
+                {
+                    $('#onoff').html('Off');
+                }
+                return switch_okay;
+            },
+            {
+                switch_off_container_path: 'ajax-switch/iphone_switch_container_off.png',
+                switch_on_container_path: 'ajax-switch/iphone_switch_container_on.png',
+                switch_path: 'ajax-switch/iphone_switch.png'
+            });
+    </script>
+</div>
+
+
