@@ -1,6 +1,2 @@
-* Make clicking on a tab shift the active control
-* Load the scrolling or not scrolling indicator on the main page.
-    - And put the message in there as well.
-
 * Add slider controls for the control page, /w:
     Init/Clear    Reset    

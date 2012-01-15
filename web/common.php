@@ -12,12 +12,15 @@ function menu_html($selected_menu)
     $ret = "<ul>\n";
     foreach($g_menus as $m => $p)
     {
-        $class="menufont bg1 tabwidth";
+        $class="menu_item menufont bg1 tabwidth";
         $id="menu_{$m}";
         $onclick="onclick='
            $.get(\"{$p}\", function(data){
              $(\"#maincontent\").html(data);
             }); 
+
+           $(\".menu_item\").removeClass(\"active\");
+           $(\"#{$id}\").addClass(\"active\");
            
            return false;'";
 
