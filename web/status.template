@@ -29,9 +29,7 @@
    </script>
 
    <div id="builtin_message_body">
-   <textarea id="builtin_message_text" title="Enter the message here.  A special square bracked syntax can be used to start a color change.  For example, [red]TEXT, will make red TEXT.  Advanced colors can be done with 4 hex digits like this: [bb|rr|gg|bb] where bb is bright in hex, rr is red in hex, gg green, and bb blue.  For example, [CC|0F|00|00] is bright red.">
-        $builtin_message
-    </textarea>
+   <textarea id="builtin_message_text" title="Enter the message here.  A special square bracked syntax can be used to start a color change.  For example, [red]TEXT, will make red TEXT.  Advanced colors can be done with 4 hex digits like this: [bb|rr|gg|bb] where bb is bright in hex, rr is red in hex, gg green, and bb blue.  For example, [CC|0F|00|00] is bright red.">$builtin_message</textarea>
    <input id="builtin_message_button" value="Change builtin message" type="submit" onclick="change_message(); return false;"></input>
    </div>
 

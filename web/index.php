@@ -2,7 +2,7 @@
         "http://www.w3.org/TR/html4/loose.dtd">
 
 <?php
-    $g_title = "My test web page";
+    $g_title = "Blocklight Control";
     include 'common.php';
     include 'headers.php';
 ?>
