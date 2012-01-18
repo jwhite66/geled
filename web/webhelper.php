@@ -33,6 +33,11 @@
         echo "Faking setmessage okay";
     }
 
+    else if ($cmd == "init")
+    {
+        echo "Faking init okay";
+    }
+
     else
     {
         header("HTTP/1.0 500 Unknown command $cmd");

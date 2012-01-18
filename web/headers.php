@@ -24,4 +24,36 @@
         <script src="jquery-1.6.4.js"></script>
         <script src="jquery-textFill-0.1.js"></script>
 
+       <script type="text/javascript">
+            /* Run a command and get the status back */
+            function run_command(cmd)
+            {
+                $.ajax({
+                    url: 'webhelper.php?cmd=' + cmd,
+                    async : false,
+                    success: function( data ) 
+                    {
+                        $(".statusrow").removeClass("errorcolor");
+                        $(".statusrow").addClass("aokcolor");
+                        $(".statusrow").html(data);
+                    },
+                    error: function( data, textStatus, errorThrown ) 
+                    {
+                        $(".statusrow").removeClass("aokcolor");
+                        $(".statusrow").addClass("errorcolor");
+                        $(".statusrow").html(errorThrown);
+                    }
+                  });
+            }
+
+            /* Run a command and ignore the result */
+            function send_command(cmd)
+            {
+                $.ajax({
+                    url: 'webhelper.php?cmd=' + cmd,
+                    async : true
+                  });
+            }
+       </script>
+
     </head>

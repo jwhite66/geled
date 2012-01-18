@@ -235,6 +235,68 @@
 .tabdiv a:visited,a:link { text-decoration: none }
 
 
-.tabwidth {
+.tabwidth
+{
     width: 15%;
 }
+
+.iconrow
+{
+    height: 125px;
+    padding-top: 25px;
+    clear: right;
+}
+
+.control_box
+{
+    width: 200px;
+    margin-left: 100px;
+    height: 75px;
+    float: left;
+    line-height: 1.5em;
+    font-size: 48px;
+    text-align: center;
+}
+
+.statusrow
+{
+    width: 500;
+    margin-left: 100px;
+    height: 75px;
+    line-height: 1.5em;
+    font-size: 28px;
+    text-align: center;
+}
+
+.button
+{
+        padding: 5px 10px;
+        display: inline;
+        background: #777 url(button.png) repeat-x bottom;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        font-weight: bold;
+        border-radius: 5px;
+        -moz-border-radius: 5px;
+        -webkit-border-radius: 5px;
+        text-shadow: 1px 1px #666;
+}
+
+.button:hover
+{
+        background-position: 0 center;
+}
+
+.button:active
+{
+        background-position: 0 top;
+        position: relative;
+        top: 1px;
+        padding: 6px 10px 4px;
+}
+
+.button.red { background-color: #e50000; }
+.button.purple { background-color: #9400bf; }
+.button.green { background-color: #58aa00; }
+.button.orange { background-color: #ff9c00; }

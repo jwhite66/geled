@@ -1,1 +1,1 @@
-Apps placeholder
+Lights placeholder
