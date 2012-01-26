@@ -450,6 +450,8 @@ int main(int argc, char *argv[])
             perform_status(fd);
         else if (strcmp(argv[i], "chase") == 0)
             perform_cmd(fd, COMMAND_CHASE);
+        else if (strcmp(argv[i], "flood") == 0)
+            perform_cmd(fd, COMMAND_FLOOD);
         else if (strcmp(argv[i], "display") == 0)
             perform_cmd(fd, COMMAND_SCROLL_DISPLAY);
         else if (strcmp(argv[i], "displayoff") == 0)

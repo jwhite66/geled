@@ -481,6 +481,42 @@ void chase(void)
     }
 }
 
+/*----------------------------------------------------------------------------
+**  flood
+**      Flood all the strings with a single color
+**--------------------------------------------------------------------------*/
+void flood(void)
+{
+    int string;
+    int addr;
+    int red, green, blue;
+    uint8_t out[4];
+
+    for (addr = 0; addr < ADDR_COUNT; addr++)
+    {
+        for (string = 0; string < STRING_COUNT; string++)
+        {
+            red = green = blue = 0;
+            switch(string)
+            {
+                case 0:  red = 13; break;
+                case 1:  green = 13; break;
+                case 2:  blue = 13; break;
+                case 3:  blue = 13; red = 13; break;
+                case 4:  green = 13; red = 13; break;
+                case 5:  blue = 13; green = 13; red = 13; break;
+            }
+            BULB_FLAG_ADDRESS(out) = addr;
+            if (string < STRING_COUNT - 1)
+                BULB_FLAG_ADDRESS(out) |= BULB_FLAG_COMBINE;
+            BULB_BLUE_STRING(out) = string | (blue << 4);
+            BULB_GREEN_RED(out) = (green << 4) | red;
+            BULB_BRIGHT(out) = MAX_BRIGHT;
+            process_bulb(out);
+        }
+    }
+}
+
 void flush_sync(void)
 {
     uint8_t c;
@@ -530,6 +566,10 @@ void process_command(const uint8_t *data)
 
         case COMMAND_CHASE:
             chase();
+            break;
+
+        case COMMAND_FLOOD:
+            flood();
             break;
 
         case COMMAND_SCROLL_DISPLAY_OFF:
