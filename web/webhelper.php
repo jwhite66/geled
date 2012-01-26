@@ -1,5 +1,16 @@
 <?php
 
+function run_cmd($c)
+{
+    $last = exec($c, $output, $rc);
+    if ($rc != 0)
+        header("HTTP/1.0 500 Error  - {$output[0]}");
+    else
+        echo "$last";
+
+    return $rc;
+}
+
     if (isset($_GET["cmd"]))
         $cmd = $_GET["cmd"];
     else
@@ -20,12 +31,12 @@
     }
     else if ($cmd == "displayon")
     {
-        echo "Faking display on okay.";
+        run_cmd("../drive display");
     }
 
     else if ($cmd == "displayoff")
     {
-        echo "Faking display off okay.";
+        run_cmd("../drive displayoff");
     }
 
     else if ($cmd == "setmessage")
@@ -35,8 +46,17 @@
 
     else if ($cmd == "init")
     {
-        echo "Faking init okay";
+        run_cmd("../drive init");
     }
+    else if ($cmd == "fill")
+    {
+        run_cmd("../drive flood");
+    }
+    else if ($cmd == "chase")
+    {
+        run_cmd("../drive chase");
+    }
+
 
     else
     {
