@@ -1,3 +1,4 @@
+* Investigate the hupcl business, and turn it correctly by default
 * Provide a flash ram setting to perform init on boot
 * Understand boot initialization
 * Revamp the web site to simplify and really improve on it;
