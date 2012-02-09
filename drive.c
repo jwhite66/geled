@@ -188,7 +188,7 @@ void build_bulb(unsigned char *out, unsigned char string, unsigned char addr,
 }
 
 
-void perform_cmd(int fd, int cmd)
+int perform_cmd(int fd, int cmd)
 {
     unsigned char out[4];
     memset(out, 0, sizeof(out));
@@ -204,7 +204,12 @@ void perform_cmd(int fd, int cmd)
     writebuf(fd, out, sizeof(out));
 
     if (getok(fd, 5, 1000 * 1000) != 0)
+    {
         fprintf(stderr, "Error getting okay during cmd\n");
+        return -1;
+    }
+
+    return 0;
 }
 
 void perform_status(int fd)
@@ -332,6 +337,7 @@ int main(int argc, char *argv[])
     unsigned long delay = 100;
     char custom[256] = {0};
     unsigned char out[4];
+    int rc = 0;
 
     static struct option long_options[] =
     {
@@ -443,19 +449,19 @@ int main(int argc, char *argv[])
     for (i = optind; i  < argc; i++)
     {
         if (strcmp(argv[i], "init") == 0)
-            perform_cmd(fd, COMMAND_INIT);
+            rc = perform_cmd(fd, COMMAND_INIT);
         else if (strcmp(argv[i], "clear") == 0)
-            perform_cmd(fd, COMMAND_CLEAR);
+            rc = perform_cmd(fd, COMMAND_CLEAR);
         else if (strcmp(argv[i], "status") == 0)
             perform_status(fd);
         else if (strcmp(argv[i], "chase") == 0)
-            perform_cmd(fd, COMMAND_CHASE);
+            rc = perform_cmd(fd, COMMAND_CHASE);
         else if (strcmp(argv[i], "flood") == 0)
-            perform_cmd(fd, COMMAND_FLOOD);
+            rc = perform_cmd(fd, COMMAND_FLOOD);
         else if (strcmp(argv[i], "display") == 0)
-            perform_cmd(fd, COMMAND_SCROLL_DISPLAY);
+            rc = perform_cmd(fd, COMMAND_SCROLL_DISPLAY);
         else if (strcmp(argv[i], "displayoff") == 0)
-            perform_cmd(fd, COMMAND_SCROLL_DISPLAY_OFF);
+            rc = perform_cmd(fd, COMMAND_SCROLL_DISPLAY_OFF);
         else if (strcmp(argv[i], "sync") == 0)
             perform_sync(fd);
         else if (strcmp(argv[i],"bulb") == 0)
@@ -472,7 +478,7 @@ int main(int argc, char *argv[])
         write_bulbs = 1;
 
     if (cmd > 0)
-        perform_cmd(fd, cmd);
+        rc = perform_cmd(fd, cmd);
 
     if (write_bulbs)
     {
@@ -497,12 +503,15 @@ int main(int argc, char *argv[])
     flush_buffer(fd);
 
     if (getok(fd, 1, 1000 * 1000) < 0)
+    {
         fprintf(stderr, "Error:  did not get closing ack\n");
+        rc = -1;
+    }
 
     close(fd);
 
     if (g_verbose)
         printf("Wrote %ld bulbs\n", g_writes);
 
-    return 0;
+    return rc;
 }
