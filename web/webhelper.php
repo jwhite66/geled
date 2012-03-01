@@ -11,14 +11,19 @@ function run_cmd($c)
     return $rc;
 }
 
-function parse_message($line_array)
+function parse_message($line_array, &$on)
 {
     $skip = true;
+    $on = true;
     $out = "";
     foreach ($line_array as $l)
     {
         if (! $skip)
             $out .= $l;
+        else
+            if (preg_match("/NOT/", $l))
+                $on = false;
+
         if (preg_match("/builtin message:/", $l))
             $skip = false;
     }
@@ -47,7 +52,12 @@ function parse_message($line_array)
         }
         else
         {
-            $bmessage = parse_message($output);
+            $bmessage = parse_message($output, $on);
+            if (strlen($bmessage) > 0 && $on)
+            {
+                $disp_status_desc = "On";
+                $disp_status = "on";
+            }
             $template = str_replace('$status_title', $output[0], $template);
             $template = str_replace('$status_color', "aokcolor", $template);
             $template = str_replace('$status', "OK", $template);
@@ -86,6 +96,13 @@ function parse_message($line_array)
     else if ($cmd == "chase")
     {
         run_cmd("../drive chase");
+    }
+    else if ($cmd == "reset")
+    {
+        run_cmd("stty --file /dev/ttyUSB0  hupcl ; \
+            (sleep 0.1 2>/dev/null || sleep 1) ; \
+                stty --file /dev/ttyUSB0 -hupcl ");
+        echo "Arduino reset.";
     }
 
 
