@@ -88,10 +88,12 @@ function parse_message($line_array, &$on)
     else if ($cmd == "init")
     {
         run_cmd("../drive init");
+        echo "Strings cleared (will also initialize).";
     }
     else if ($cmd == "fill")
     {
         run_cmd("../drive flood");
+        echo "Flooded all strings with color";
     }
     else if ($cmd == "chase")
     {
