@@ -9,8 +9,8 @@
 
 #include <pthread.h>
 
-#define PIXELS_WIDE     17
-#define PIXELS_HIGH     5
+#define PIXELS_WIDE     10
+#define PIXELS_HIGH     10
 #define PIXELS_PER_PIXEL    40
 
 typedef struct

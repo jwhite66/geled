@@ -4,10 +4,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/fcntl.h>
-#include <pthread.h>
 #include <math.h>
-#include <errno.h>
 
 #include <sys/param.h>
 
@@ -17,6 +14,7 @@
 #endif
 
 #include "led.h"
+#include "fifo.h"
 
 
 typedef struct
@@ -539,74 +537,6 @@ void move_stuff(LED_HANDLE_T h)
 
     friction_dude(&g_dudes[BLUE_DUDE]);
     friction_dude(&g_dudes[RED_DUDE]);
-}
-
-
-#define MAX_COMMAND_LEN 80
-#define FIFO_PATH "myfifo"
-
-typedef void (*fifo_callback_t)(void *, void *);
-
-typedef struct
-{
-    char *pathname;
-    pthread_t t;
-    void *first_parm;
-    fifo_callback_t callback;
-} fifo_t;
-
-static void fifo_thread(fifo_t *f)
-{
-    char buf[MAX_COMMAND_LEN];
-    FILE *fp;
-
-    while (1)
-    {
-        fp = fopen(f->pathname, "r");
-        if (! fp)
-            break;
-
-        while (! feof(fp))
-        {
-            buf[0] = '\0';
-            if (fgets(buf, sizeof(buf), fp) == NULL)
-                break;
-
-            if (strlen(buf) > 0)
-            {
-                if (buf[strlen(buf) - 1] == '\n')
-                    buf[strlen(buf) - 1] = '\0';
-            }
-
-            (*f->callback)(f->first_parm, buf);
-        }
-    }
-}
-
-int fifo_init(const char *pathname, fifo_callback_t callback, fifo_t *f, void * first_parm)
-{
-    pthread_attr_t attr;
-    int rc;
-
-    rc = mkfifo(pathname, S_IRWXU | S_IRWXG | S_IRWXO);
-    if (rc == -1 && errno != EEXIST)
-        return -1;
-
-    if (pthread_attr_init(&attr) != 0 ||
-        pthread_create(&f->t, &attr, (void * (*)(void *))fifo_thread, f) != 0)
-        return -1;
-
-    f->pathname = strdup(pathname);
-    f->callback = callback;
-    f->first_parm = first_parm;
-
-    return 0;
-}
-
-void fifo_term(fifo_t *f)
-{
-    pthread_cancel(f->t);
-    free(f->pathname);
 }
 
 

@@ -1,5 +1,5 @@
 # Configure here
-ARDUINO_DIR = /home/led/geled/arduino-0022/
+ARDUINO_DIR = /home/jwhite/w/led/arduino-0022/
 
 # You can set MESSAGE in the environment or just use the default
 ifndef MESSAGE
@@ -93,6 +93,9 @@ $(OUTDIR)/libledsim.a: $(OUTDIR)/ledsim.o
 $(OUTDIR)/ledsim.o: ledsim.c led.h Makefile
 	gcc $(SIMCFLAGS) -c -o $@ $<
 
+$(OUTDIR)/fifo.o: fifo.c fifo.h led.h Makefile
+	gcc $(SIMCFLAGS) -c -o $@ $<
+
 $(OUTDIR)/testlib: testlib.c led.h $(OUTDIR)/libled.a
 	gcc -Wall -I. -o $@ $< $(OUTDIR)/libled.a $(LIBCONFIGLDFLAGS)
 
@@ -105,10 +108,17 @@ $(OUTDIR)/ledscroll: ledscroll.c led.h $(OUTDIR)/libled.a
 $(OUTDIR)/ledscrollsim: ledscroll.c led.h $(OUTDIR)/libledsim.a
 	gcc -Wall -I. -DSIMULATOR $(FTCFLAGS) $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS) $(FTLDFLAGS)
 
-$(OUTDIR)/warsim: war.c led.h $(OUTDIR)/libledsim.a
-	gcc -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS) -lm
-$(OUTDIR)/war: war.c led.h $(OUTDIR)/libled.a
-	gcc -Wall -I. $(LIBLEDCFLAGS) -o $@ $<  $(LIBLEDLDFLAGS) -L$(OUTDIR) -lled -l pthread $(LIBCONFIGLDFLAGS) -lm
+$(OUTDIR)/warsim: war.c led.h $(OUTDIR)/libledsim.a $(OUTDIR)/fifo.o
+	gcc -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(OUTDIR)/fifo.o $(SIMLDFLAGS) -lm
+
+$(OUTDIR)/war: war.c led.h $(OUTDIR)/libled.a $(OUTDIR)/fifo.o
+	gcc -Wall -I. $(LIBLEDCFLAGS) -o $@ $< $(OUTDIR)/fifo.o $(LIBLEDLDFLAGS) -L$(OUTDIR) -lled -l pthread $(LIBCONFIGLDFLAGS) -lm
+
+$(OUTDIR)/tetrissim: tetris.c tetris.h led.h $(OUTDIR)/libledsim.a $(OUTDIR)/fifo.o
+	gcc -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(OUTDIR)/fifo.o $(SIMLDFLAGS) -lm
+
+$(OUTDIR)/tetris: tetris.c tetris.h led.h $(OUTDIR)/libled.a $(OUTDIR)/fifo.o
+	gcc -Wall -I. $(LIBLEDCFLAGS) -o $@ $< $(OUTDIR)/fifo.o $(LIBLEDLDFLAGS) -L$(OUTDIR) -lled -l pthread $(LIBCONFIGLDFLAGS) -lm
 
 $(OUTDIR)/makemap: makemap.c led.h
 	gcc -Wall -o $@ -I. -I $(OUTDIR) -I /usr/include/freetype2 $< -lfreetype -lm
