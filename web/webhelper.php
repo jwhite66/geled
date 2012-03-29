@@ -31,6 +31,22 @@ function parse_message($line_array, &$on)
     return $out;
 }
 
+function handle_fifo()
+{
+    $fname = $_GET['fifo_name'];
+    $verb = $_GET['fifo_verb'];
+    $handle = fopen($fname, "a");
+    if (! $handle)
+    {
+        header("HTTP/1.0 500 Error  - could not write {$verb} to {$fname}\n");
+    }
+    else
+    {
+        fwrite($handle, $verb . "\n");
+        fclose($handle);
+    }
+}
+
     if (isset($_GET["cmd"]))
         $cmd = $_GET["cmd"];
     else
@@ -105,6 +121,10 @@ function parse_message($line_array, &$on)
             (sleep 0.1 2>/dev/null || sleep 1) ; \
                 stty --file /dev/ttyUSB0 -hupcl ");
         echo "Arduino reset.";
+    }
+    else if ($cmd == "fifo")
+    {
+        handle_fifo();
     }
 
 

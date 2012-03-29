@@ -47,10 +47,10 @@
             }
 
             /* Run a command and ignore the result */
-            function send_command(cmd)
+            function send_command(cmd, parms)
             {
                 $.ajax({
-                    url: 'webhelper.php?cmd=' + cmd,
+                    url: 'webhelper.php?cmd=' + cmd + parms,
                     async : true
                   });
             }
