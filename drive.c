@@ -293,7 +293,7 @@ int perform_custom(int fd, char *tag)
 void usage(char *argv0)
 {
     printf("%s: [--verbose] [--every=n] [cmd1] [...] [cmdn]\n", argv0);
-    printf("%*.*s", strlen(argv0), strlen(argv0), " ");
+    printf("%*.*s", (int) strlen(argv0), (int) strlen(argv0), " ");
     printf("Drive a string of GE lights connected to an Arduino.\n");
     printf("\nCommand can be one of:\n");
     printf("\n  bulb:  Write bulbs as per specificed colors and ranges (default)\n");
