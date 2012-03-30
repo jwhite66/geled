@@ -213,7 +213,7 @@ serial_t *led_init(void)
     serial_t *ser = malloc(sizeof(*ser));
     memset(ser, 0, sizeof(*ser));
 
-    ser->confirm_every = (128 / 4) - 4;
+    ser->confirm_every = (64 / 4) - 4;
 
     config_init(&ser->config);
     config_read_file(&ser->config, LED_CFG_FILE);
