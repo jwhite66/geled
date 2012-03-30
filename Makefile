@@ -1,5 +1,5 @@
 # Configure here
-ARDUINO_DIR = arduino-0022/
+ARDUINO_DIR = current-arduino
 
 # You can set MESSAGE in the environment or just use the default
 ifndef MESSAGE
@@ -23,6 +23,7 @@ TARGET_HEX = $(OUTDIR)/led.hex
 
 ARDUINO_LIB_PATH  = $(ARDUINO_DIR)/libraries
 ARDUINO_CORE_PATH = $(ARDUINO_DIR)/hardware/arduino/cores/arduino
+ARDUINO_VARIANT_PATH = $(ARDUINO_DIR)/hardware/arduino/variants/standard
 
 MCU          = atmega328
 MCUPART      = m328p
@@ -37,7 +38,8 @@ AVRDUDE_COM_OPTS = -q -V -p $(MCUPART)
 AVRDUDE_ARD_OPTS = -c $(AVRDUDE_ARD_PROGRAMMER) -b $(AVRDUDE_ARD_BAUDRATE) -P $(ARD_PORT) $(AVRDUDE_ARD_EXTRAOPTS)
 
 CPPFLAGS      = -mmcu=$(MCU) -DF_CPU=$(F_CPU) \
-			-I. -I$(OUTDIR) -I$(ARDUINO_CORE_PATH) \
+			-I. -I$(OUTDIR) \
+                        -I$(ARDUINO_CORE_PATH) -I$(ARDUINO_VARIANT_PATH) \
 			-g -Os -w -Wall \
 			-ffunction-sections -fdata-sections
 CFLAGS        = -std=gnu99
@@ -76,7 +78,7 @@ $(OUTDIR)/message.h: Makefile $(OUTDIR)/makemap
 	$(OUTDIR)/makemap elegante_pixel.ttf "$(MESSAGE)" > $(OUTDIR)/message.h
 
 $(OUTDIR)/generated_led.cpp: led.pde led.h $(OUTDIR)/message.h
-	@echo '#include <WProgram.h>' > $@
+	@echo '#include <Arduino.h>' > $@
 	@cat $< >>$@
 
 $(OUTDIR)/generated_led.o: $(OUTDIR)/generated_led.cpp

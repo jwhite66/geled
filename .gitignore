@@ -1,4 +1,4 @@
-arduino-0022
+current-arduino
 *.o
 *.elf
 *.hex

@@ -50,9 +50,14 @@ On Debian, I have the following relevant packages:
 I suspect an apt-get install arduino-core gcc-avr will get you all of those.
 You also now will need libft-dev to get freetype dev libraries.
 
-I also downloaded the latest Arduino development environment (0022)
-and put a copy of that into the project subdirectory.  I edited the
-Makefile to point at that path.
+You need to download the contents of web/.gitignore from the internet
+and drop them into the web/ subdirectory; that includes an Arduino
+logo, jquery, and jquery-TextFill.
+
+You need to download a 1.0 Arduino development environment, and make
+a symbolic link in the top level directory named 'current-arduino'
+that points to that directory.
+
 
 
 Usage:
