@@ -1,5 +1,5 @@
 # Configure here
-ARDUINO_DIR = /home/jwhite/w/led/arduino-0022/
+ARDUINO_DIR = arduino-0022/
 
 # You can set MESSAGE in the environment or just use the default
 ifndef MESSAGE
