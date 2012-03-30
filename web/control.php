@@ -1,8 +1,8 @@
 <div id="controldiv" class="insetcontent">
 
     <div class="iconrow">
-        <div title="Clear or initialize all the strings" onclick="run_command('init');" class="control_box button red">Clear</div>
         <div title="Reset the Arduino" onclick="run_command('reset');" class="control_box button red">Reset</div>
+        <div title="Clear or initialize all the strings" onclick="run_command('init');" class="control_box button red">Clear</div>
     </div>
 
     <div class="iconrow">

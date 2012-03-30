@@ -103,8 +103,11 @@ function handle_fifo()
 
     else if ($cmd == "init")
     {
-        run_cmd("../drive init");
-        echo "Strings cleared (will also initialize).";
+        $rc = run_cmd("../drive sync");
+        if ($rc == 0)
+            $rc = run_cmd("../drive init");
+        if ($rc == 0)
+            echo "Strings cleared (will also initialize).";
     }
     else if ($cmd == "fill")
     {
