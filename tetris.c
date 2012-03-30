@@ -493,6 +493,8 @@ void fifo_callback(void *parm, void *p)
     led_engine_t *le = (led_engine_t *) parm;
     char buf[MAX_COMMAND_LEN];
     sscanf(p, "%s\n", buf);
+printf("processing [%s]\n", buf);
+fflush(stdout);
     if (strcasecmp(buf, "left") == 0)
         engine_move (&le->engine, ACTION_LEFT);
     if (strcasecmp(buf, "right") == 0)
@@ -508,6 +510,19 @@ void fifo_callback(void *parm, void *p)
     {
         g_finished = true;
         g_wakeup = true;
+    }
+    if (strcasecmp(buf, "dump") == 0)
+    {
+        int x, y;
+        for (y = 0; y < NUMROWS; y++)
+        {
+            for (x = 0; x < NUMCOLS; x++)
+                if (le->engine.board[x][y])
+                    printf("*");
+                else
+                    printf(" ");
+            printf("\n");
+        }
     }
 
     /* FIXME - todo pause, next level, shownext */
