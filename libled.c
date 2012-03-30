@@ -161,6 +161,8 @@ static void writebuf(serial_t *ser, unsigned char *out, int size)
                 if (getok(ser->fd, 1, 1000 * 1000) < 0)
                     fprintf(stderr, "Error:  did not get periodic ack\n");
     }
+    else
+        fprintf(stderr, "Error: could not writebuf\n");
 }
 
 void build_bulb(unsigned char *out, unsigned char string, unsigned char addr,
@@ -286,6 +288,10 @@ void led_get_size(serial_t *ser, int *wide, int *high)
 void led_set_pixel(serial_t *ser, int x, int y, int bright, int r, int g, int b)
 {
     unsigned char buf[4];
+
+    if (x >= ser->width ||y >= ser->height)
+        return;
+
     bulb_map_t *bulb = ser->bulb_map + (y * ser->width) + x;
     build_bulb(buf, bulb->string, bulb->addr, bright, r, g, b, 0);
     writebuf(ser, buf, sizeof(buf));
