@@ -536,9 +536,7 @@ void process_command(const uint8_t *data)
             /*----------------------------------------------------------------
             **  Command 1:  Echo.  We just return the next 3 bytes
             **--------------------------------------------------------------*/
-            Serial.print(data[1]);
-            Serial.print(data[2]);
-            Serial.print(data[3]);
+            Serial.write(data + 1, 3);
             break;
 
         case COMMAND_SYNC:
@@ -555,7 +553,6 @@ void process_command(const uint8_t *data)
                 Serial.println("  Displaying builtin message:");
             else
                 Serial.println("  NOT Displaying builtin message:");
-            Serial.print("    ");
             Serial.println(MESSAGE_TEXT);
             Serial.print('\0');
             break;
