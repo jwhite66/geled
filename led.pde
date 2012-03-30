@@ -308,7 +308,7 @@ uint8_t *g_scroll_pos = g_message_bits;
 int g_scroll_width = (10 + 7);
 unsigned long g_next_scroll = 0;
 uint8_t g_scroll_blueshift = 0;
-uint8_t g_scroll_redshift = 0;
+uint8_t g_scroll_redshift = 13 << 4;
 uint8_t g_scroll_greenshift = 0;
 uint8_t g_scroll_bright = MAX_BRIGHT;
 

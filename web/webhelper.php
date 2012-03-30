@@ -91,7 +91,7 @@ function handle_fifo()
     }
     else if ($cmd == "displayon")
     {
-        run_cmd("../drive display");
+        run_cmd("../drive display --red=13");
     }
 
     else if ($cmd == "displayoff")
