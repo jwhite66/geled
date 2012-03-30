@@ -67,7 +67,10 @@ $(OUTDIR)/%.hex: $(OUTDIR)/%.elf
 
 OBJECTS=$(OUTDIR)/generated_led.o $(OUTDIR)/Print.o $(OUTDIR)/HardwareSerial.o $(OUTDIR)/wiring.o $(OUTDIR)/main.o
 
-all: $(TARGET_HEX) $(OUTDIR)/drive $(OUTDIR)/makemap
+all: $(TARGET_HEX) $(OUTDIR)/drive $(OUTDIR)/makemap \
+        $(OUTDIR)/ledscroll $(OUTDIR)/ledscrollsim \
+        $(OUTDIR)/war $(OUTDIR)/warsim \
+        $(OUTDIR)/tetris $(OUTDIR)/tetrissim 
 
 $(OUTDIR)/message.h: Makefile $(OUTDIR)/makemap
 	$(OUTDIR)/makemap elegante_pixel.ttf "$(MESSAGE)" > $(OUTDIR)/message.h
@@ -149,4 +152,8 @@ reset:
 	stty --file $(ARD_PORT) -hupcl 
 
 clean:
-	$(RM) $(OBJECTS) $(TARGET_HEX) $(OUTDIR)/led.elf $(OUTDIR)/generated_led.cpp $(OUTDIR)/drive $(OUTDIR)/makemap $(OUTDIR)/message.h
+	$(RM) $(OBJECTS) $(TARGET_HEX) $(OUTDIR)/led.elf $(OUTDIR)/generated_led.cpp $(OUTDIR)/drive $(OUTDIR)/makemap $(OUTDIR)/message.h \
+        $(OUTDIR)/ledscroll $(OUTDIR)/ledscrollsim \
+        $(OUTDIR)/war $(OUTDIR)/warsim \
+        $(OUTDIR)/tetris $(OUTDIR)/tetrissim 
+
