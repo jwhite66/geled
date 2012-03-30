@@ -52,6 +52,9 @@ function handle_fifo()
     else
         $cmd = "none";
 
+    if (isset($_GET["message"]))
+        $message = $_GET["message"];
+
     if ($cmd == "status")
     {
         $template = file_get_contents("status.template");
@@ -98,7 +101,7 @@ function handle_fifo()
 
     else if ($cmd == "setmessage")
     {
-        echo "Faking setmessage okay";
+        run_cmd("MESSAGE='{$message}' ../makehelper");
     }
 
     else if ($cmd == "init")

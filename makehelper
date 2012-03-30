@@ -1,0 +1,10 @@
+#!/bin/bash
+tmpdir=`mktemp --tmpdir -d ledMXXX`
+if [ ! -d $tmpdir ] ; then
+    echo 'Error:  temp directory not made'
+    exit 1
+fi
+
+dname=`dirname $0`
+cd $dname
+(make OUTDIR=$tmpdir && make OUTDIR=$tmpdir upload && rm -rf $tmpdir ) >$tmpdir/make.log 2>&1
