@@ -432,12 +432,6 @@ int main(int argc, char *argv[])
     if (g_verbose)
         printf("..open...\n");
 
-    if (getok(fd, 5, 3000 * 1000) < 0)
-    {
-        fprintf(stderr, "Error:  could not get an ok back\n");
-        return -1;
-    }
-
     flush_buffer(fd);
 
     if (g_verbose)
