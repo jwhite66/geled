@@ -6,7 +6,6 @@
 
 --- Game todo ---
 Really should use a mutex or something to avoid thread clash
-Set the umask before we open the fifo
 
 
 --- Long Term ---

@@ -127,6 +127,12 @@
     margin-top: 15px;
 }
 
+#tetris_control
+{
+    float: left;
+    width: 350px;
+}
+
 .fixedwhole
 {  
     position: absolute;   
