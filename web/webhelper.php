@@ -127,7 +127,12 @@ function handle_fifo()
     }
     else if ($cmd == "tetris")
     {
+        system("echo 0 > tetris.score");
         run_cmd("DISPLAY=:0 ../tetrissim > /dev/null 2>&1 &");
+    }
+    else if ($cmd == "tetris.score")
+    {
+        system("cat tetris.score");
     }
     else if ($cmd == "reset")
     {

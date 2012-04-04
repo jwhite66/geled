@@ -389,11 +389,18 @@ int engine_evaluate (engine_t *engine)
  * a block collides at the bottom of the screen (or the top of the heap */
 static void score_function (engine_t *engine)
 {
+    FILE *fp = fopen("tetris.score", "w");
     int score = SCOREVAL (g_level * (engine->status.dropcount + 1));
 
-    engine->score += score;
     if (g_shownext)
         score /= 2;
+
+    engine->score += score;
+    if (fp)
+    {
+        fprintf(fp, "%d\n", engine->score);
+        fclose(fp);
+    }
 }
 
 /* Draw the board on the screen */
