@@ -15,6 +15,15 @@ function run_cmd($c)
     return $rc;
 }
 
+/*
+    $fp = popen("ps -C ledscrollsim -o pid=,args=", "r");
+    while ($fp && !feof($fp))
+    {
+       $l = fgets($fp);
+       $msgpids .= $l;
+    }
+    pclose($fp);
+*/
 function parse_message($line_array, &$on)
 {
     $skip = true;
@@ -108,6 +117,16 @@ function handle_fifo()
         run_cmd("MESSAGE='{$message}' ../makehelper 2>&1");
     }
 
+    else if ($cmd == "runmessage")
+    {
+        system("pkill ledscrollsim");
+        run_cmd("DISPLAY=:0 ../ledscrollsim ../elegante_pixel.ttf '{$message}' > /dev/null 2>&1 &");
+    }
+
+    else if ($cmd == "stopmessage")
+    {
+        system("pkill ledscrollsim");
+    }
     else if ($cmd == "init")
     {
         $rc = run_cmd("../drive sync 2>&1");
@@ -153,13 +172,4 @@ function handle_fifo()
     }
 
 
-/*
-    $fp = popen("ps -C ledscrollsim -o pid=,args=", "r");
-    while ($fp && !feof($fp))
-    {
-       $l = fgets($fp);
-       $msgpids .= $l;
-    }
-    pclose($fp);
-*/
 ?>

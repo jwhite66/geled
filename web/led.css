@@ -111,6 +111,38 @@
     width: 600px;
 }
 
+#signboard_message_title
+{
+    float: left;
+    margin-left: 50px;
+    margin-top: 25px;
+    font-size: 25px;
+}
+
+#signboard_message_body
+{
+    display: block;
+    margin-left: 50px;
+    margin-right: 150px;
+    margin-top: 25px;
+    margin-bottom: 25px;
+    float: left;
+    clear: both;
+}
+
+#signboard_message_text
+{
+    font-size: 20px;
+    width: 600px;
+}
+
+#signboard_message_control
+{
+    display: block;
+    margin-left: 50px;
+    margin-top: 100px;
+}
+
 #mstatus
 {
     position: absolute;
@@ -243,7 +275,7 @@
 
 .tabwidth
 {
-    width: 15%;
+    width: 12%;
 }
 
 .iconrow

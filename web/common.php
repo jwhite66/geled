@@ -4,8 +4,8 @@ if (! isset($g_title))
     $g_title = "BlockLight Control";
 
 $g_menus = array("Status" => "status.php", "Control" => "control.php",
-                 "Lights" => "lights.php", "SpaceWar" => "spacewar.php",
-                 "Tetris" => "tetris.php");
+                 "Signboard" => "signboard.php", "Lights" => "lights.php",
+                 "SpaceWar" => "spacewar.php", "Tetris" => "tetris.php");
 
 function menu_html($selected_menu)
 {

@@ -148,9 +148,7 @@ int main(int argc, char *argv[])
         if ( error )
           continue;                 /* ignore errors */
 
-        if (rows > 0)
-            assert(rows >= face->glyph->bitmap.rows);
-        else
+        if (rows <= 0)
             rows = face->glyph->bitmap.rows;
 
         assert(x + face->glyph->bitmap.width < MAX_COLS);
