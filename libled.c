@@ -216,7 +216,8 @@ serial_t *led_init(void)
     ser->confirm_every = (64 / 4) - 4;
 
     config_init(&ser->config);
-    config_read_file(&ser->config, LED_CFG_FILE);
+    if (config_read_file(&ser->config, LED_CFG_FILE) == CONFIG_FALSE)
+        config_read_file(&ser->config, ALT_LED_CFG_FILE);
 
     config_lookup_int(&ser->config, "display/height", &ser->height);
     config_lookup_int(&ser->config, "display/width", &ser->width);

@@ -1,4 +1,5 @@
 #define LED_CFG_FILE        "led.cfg"
+#define ALT_LED_CFG_FILE    "../led.cfg"
 
 #define MAX_BRIGHT          0xCC
 #define MAX_RGB             0xF
