@@ -116,6 +116,8 @@ int main(int argc, char *argv[])
 
     int originx;
     int max_x;
+    int max_y = 0;
+    int base_y = 0;
     int wide, high;
 
     LED_HANDLE_T h;
@@ -130,7 +132,10 @@ int main(int argc, char *argv[])
     error = FT_New_Face(library, argv[1], 0, &face);
 
     /* 1024 works for the 5x7 font.  Go figure */
-    error = FT_Set_Char_Size( face, 512, 0, 72, 0 );
+    //if (memcmp(argv[1], "elegant", 7) == 0)
+        error = FT_Set_Char_Size( face, 512, 0, 72, 0 );
+    //else
+        //error = FT_Set_Char_Size( face, 1024, 0, 72, 0 );
 
     memset(bits, 0, sizeof(bits));
 
@@ -150,6 +155,10 @@ int main(int argc, char *argv[])
 
         if (rows <= 0)
             rows = face->glyph->bitmap.rows;
+
+        if (rows > max_y)
+            max_y = rows;
+
 
         assert(x + face->glyph->bitmap.width < MAX_COLS);
 
@@ -171,6 +180,9 @@ int main(int argc, char *argv[])
     {
         led_get_size(h, &wide, &high);
 
+        if (max_y < high)
+            base_y = (high - max_y) / 2;
+
         originx = 0;
         while (1)
         {
@@ -179,10 +191,10 @@ int main(int argc, char *argv[])
                 originx = 0;
 
             for (x = 0; x < wide; x++)
-                for (y = 0; y < high; y++)
+                for (y = 0; y < max_y; y++)
                 {
                     pixel_t *pixel = &bits[(originx + x) % max_x][y];
-                    led_set_pixel(h, x, y, pixel->bright, pixel->r, pixel->g, pixel->b);
+                    led_set_pixel(h, x, y + base_y, pixel->bright, pixel->r, pixel->g, pixel->b);
                 }
 
             originx++;

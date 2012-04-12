@@ -9,7 +9,7 @@
 
 #include <pthread.h>
 
-#define PIXELS_WIDE     10
+#define PIXELS_WIDE     20
 #define PIXELS_HIGH     10
 #define PIXELS_PER_PIXEL    40
 

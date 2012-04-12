@@ -190,19 +190,17 @@ int get_one_setting(config_setting_t *setting, const char *name, long *out)
 
 void compute_x_y(int addr, long start, long end, long fromx, long fromy, long tox, long toy, int *x, int *y)
 {
-    int total = end - start + 1;
     int width = tox - fromx + 1;
-    int height = total / width;
 
-    int col = addr / height;
-    int rowup;
-    if (col % 2 == 0)
-        rowup = addr % height;
+    int row = addr / width;
+    int col;
+    if (row % 2 == 0)
+        col = addr % width;
     else
-        rowup = height - (addr % height) - 1;
+        col = width - (addr % width) - 1;
 
     *x = fromx + col;
-    *y = fromy - rowup;
+    *y = toy - row;
 }
 
 
@@ -221,7 +219,6 @@ serial_t *led_init(void)
 
     config_lookup_int(&ser->config, "display/height", &ser->height);
     config_lookup_int(&ser->config, "display/width", &ser->width);
-
     if (ser->height == 0 || ser->width == 0)
     {
         fprintf(stderr, "Error:  width and height not given in cfg file.\n");
