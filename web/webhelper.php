@@ -117,15 +117,25 @@ function handle_fifo()
         run_cmd("MESSAGE='{$message}' ../makehelper 2>&1");
     }
 
+    else if ($cmd == "spacewar")
+    {
+        system("pkill war");
+        run_cmd("DISPLAY=:0 ../war > /dev/null 2>&1 &");
+    }
+
+    else if ($cmd == "stopspacewar")
+    {
+        system("pkill war");
+    }
     else if ($cmd == "runmessage")
     {
-        system("pkill ledscrollsim");
-        run_cmd("DISPLAY=:0 ../ledscrollsim ../elegante_pixel.ttf '{$message}' > /dev/null 2>&1 &");
+        system("pkill ledscroll");
+        run_cmd("DISPLAY=:0 ../ledscroll ../elegante_pixel.ttf '{$message}' > /dev/null 2>&1 &");
     }
 
     else if ($cmd == "stopmessage")
     {
-        system("pkill ledscrollsim");
+        system("pkill ledscroll");
     }
     else if ($cmd == "init")
     {
@@ -147,7 +157,7 @@ function handle_fifo()
     else if ($cmd == "tetris")
     {
         system("echo 0 > tetris.score");
-        run_cmd("DISPLAY=:0 ../tetrissim > /dev/null 2>&1 &");
+        run_cmd("DISPLAY=:0 ../tetris > /dev/null 2>&1 &");
     }
     else if ($cmd == "tetris.score")
     {

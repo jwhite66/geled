@@ -3,15 +3,10 @@
 if (! isset($g_title))
     $g_title = "BlockLight Control";
 
-$g_menus = array("Status" => "status.php", "Control" => "control.php",
-                 "Signboard" => "signboard.php", "Lights" => "lights.php",
-                 "SpaceWar" => "spacewar.php", "Tetris" => "tetris.php");
-
-function menu_html($selected_menu)
+function menu_html($selected_menu, $all_menus)
 {
-    global $g_menus;
     $ret = "<ul>\n";
-    foreach($g_menus as $m => $p)
+    foreach($all_menus as $m => $p)
     {
         $class="menu_item menufont bg1 tabwidth";
         $id="menu_{$m}";

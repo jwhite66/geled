@@ -3,6 +3,10 @@
 
 <?php
     $g_title = "Blocklight Control";
+    $g_menus = array("Status" => "status.php", "Control" => "control.php",
+                     "Signboard" => "signboard.php", "Lights" => "lights.php",
+                     "SpaceWar" => "spacewar.php", "Tetris" => "tetris.php");
+
     include 'common.php';
     include 'headers.php';
 ?>
@@ -24,7 +28,7 @@
             </div>
 
               <div class="tabdiv">
-                <?php echo menu_html("Status"); ?>
+                <?php echo menu_html("Status", $g_menus); ?>
               </div> <!--tabdiv-->
 
             <div id="maincontent" class="content bg1">
