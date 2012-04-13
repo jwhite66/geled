@@ -90,28 +90,28 @@ $(OUTDIR)/libled.a: $(OUTDIR)/libled.o
 	ar r $@ $<
 
 $(OUTDIR)/libled.o: libled.c led.h
-	gcc -Wall -c -I. $(LIBLEDCFLAGS) -o $@ $< $(LIBLEDLDFLAGS)
+	gcc -g -Wall -c -I. $(LIBLEDCFLAGS) -o $@ $< $(LIBLEDLDFLAGS)
 
 $(OUTDIR)/libledsim.a: $(OUTDIR)/ledsim.o
 	ar r $@ $<
 
 $(OUTDIR)/ledsim.o: ledsim.c led.h Makefile
-	gcc $(SIMCFLAGS) -c -o $@ $<
+	gcc -g $(SIMCFLAGS) -c -o $@ $<
 
 $(OUTDIR)/fifo.o: fifo.c fifo.h led.h Makefile
 	gcc $(SIMCFLAGS) -c -o $@ $<
 
 $(OUTDIR)/testlib: testlib.c led.h $(OUTDIR)/libled.a
-	gcc -Wall -I. -o $@ $< $(OUTDIR)/libled.a $(LIBCONFIGLDFLAGS)
+	gcc -g -Wall -I. -o $@ $< $(OUTDIR)/libled.a $(LIBCONFIGLDFLAGS)
 
 $(OUTDIR)/testlibsim: testlib.c led.h $(OUTDIR)/libledsim.a
-	gcc -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS)
+	gcc -g -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS)
 
 $(OUTDIR)/ledscroll: ledscroll.c led.h $(OUTDIR)/libled.a
-	gcc -Wall -I. $(FTCFLAGS) -o $@ $< $(OUTDIR)/libled.a $(LIBCONFIGLDFLAGS) $(FTLDFLAGS)
+	gcc -g -Wall -I. $(FTCFLAGS) -o $@ $< $(OUTDIR)/libled.a $(LIBCONFIGLDFLAGS) $(FTLDFLAGS)
 
 $(OUTDIR)/ledscrollsim: ledscroll.c led.h $(OUTDIR)/libledsim.a
-	gcc -Wall -I. -DSIMULATOR $(FTCFLAGS) $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS) $(FTLDFLAGS)
+	gcc -g -Wall -I. -DSIMULATOR $(FTCFLAGS) $(SIMCFLAGS) -o $@ $< $(SIMLDFLAGS) $(FTLDFLAGS)
 
 $(OUTDIR)/warsim: war.c led.h $(OUTDIR)/libledsim.a $(OUTDIR)/fifo.o
 	gcc -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(OUTDIR)/fifo.o $(SIMLDFLAGS) -lm
