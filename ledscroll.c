@@ -28,7 +28,6 @@ int bit_set(unsigned char *buffer, int x, int y, int pitch)
     buffer += (y * pitch);
     buffer += (x / 8);
     rc = *buffer & (1 << (8 - (x % 8)));
-printf("checking x %d, y %d, pitch %d, buffer 0x%x: %d\n", x, y, pitch, *buffer, rc);
     return rc;
 }
 

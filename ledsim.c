@@ -153,6 +153,12 @@ void led_term(LED_HANDLE_T h)
 void led_set_pixel(LED_HANDLE_T h, int x, int y, int bright, int r, int g, int b)
 {
     pixel_t pixel = { bright, r, g, b };
+    if (x < 0 || y < 0 || x >= PIXELS_WIDE ||y >= PIXELS_HIGH)
+    {
+        fprintf(stderr, "Error:  attempt made to set an invalid pixel spot %d, %d\n", x, y);
+        return;
+    }
+
     h->pixels[x][y] = pixel;
     draw_pixel(h, x, y);
 }

@@ -256,6 +256,11 @@ serial_t *led_init(void)
             for (addr = start; addr <= end; addr++)
             {
                 compute_x_y(addr, start, end, fromx, fromy, tox, toy, &x, &y);
+                if (x >= ser->width || y >= ser->height || x < 0 || y < 0)
+                {
+                    fprintf(stderr, "Error: computed out of bounds x of %d and y of %d\n", x, y);
+                    continue;
+                }
                 (ser->bulb_map + ((y * ser->width) + x))->string = string;
                 (ser->bulb_map + ((y * ser->width) + x))->addr = addr;
             }
@@ -287,8 +292,11 @@ void led_set_pixel(serial_t *ser, int x, int y, int bright, int r, int g, int b)
 {
     unsigned char buf[4];
 
-    if (x >= ser->width ||y >= ser->height)
+    if (x < 0 || y < 0 || x >= ser->width ||y >= ser->height)
+    {
+        fprintf(stderr, "Error:  attempt made to set an invalid pixel spot %d, %d\n", x, y);
         return;
+    }
 
     bulb_map_t *bulb = ser->bulb_map + (y * ser->width) + x;
     build_bulb(buf, bulb->string, bulb->addr, bright, r, g, b, 0);
