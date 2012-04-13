@@ -130,7 +130,7 @@ function handle_fifo()
     else if ($cmd == "runmessage")
     {
         system("pkill ledscroll");
-        run_cmd("DISPLAY=:0 ../ledscroll ../elegante_pixel.ttf '{$message}' > /dev/null 2>&1 &");
+        run_cmd("DISPLAY=:0 ../ledscroll ../6x10.bdf '{$message}' > /dev/null 2>&1 &");
     }
 
     else if ($cmd == "stopmessage")
