@@ -75,7 +75,7 @@ all: $(TARGET_HEX) $(OUTDIR)/drive $(OUTDIR)/makemap \
         $(OUTDIR)/tetris $(OUTDIR)/tetrissim 
 
 $(OUTDIR)/message.h: Makefile $(OUTDIR)/makemap
-	$(OUTDIR)/makemap elegante_pixel.ttf "$(MESSAGE)" > $(OUTDIR)/message.h
+	$(OUTDIR)/makemap 6x10.bdf "$(MESSAGE)" > $(OUTDIR)/message.h
 
 $(OUTDIR)/generated_led.cpp: led.pde led.h $(OUTDIR)/message.h
 	@echo '#include <Arduino.h>' > $@
