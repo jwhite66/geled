@@ -22,6 +22,16 @@ typedef struct
 
 typedef pixel_t bits_t[MAX_COLS][MAX_ROWS];
 
+int bit_set(unsigned char *buffer, int x, int y, int pitch)
+{
+    int rc;
+    buffer += (y * pitch);
+    buffer += (x / 8);
+    rc = *buffer & (1 << (8 - (x % 8)));
+printf("checking x %d, y %d, pitch %d, buffer 0x%x: %d\n", x, y, pitch, *buffer, rc);
+    return rc;
+}
+
 void draw_bitmap(FT_Bitmap*  bitmap, int originx, int originy, bits_t bits, pixel_t *pixel)
 {
     int x, y;
@@ -29,7 +39,7 @@ void draw_bitmap(FT_Bitmap*  bitmap, int originx, int originy, bits_t bits, pixe
 
     for (x = 0; x < bitmap->width; x++)
         for (y = 0; y < bitmap->rows; y++)
-            if (bitmap->buffer[y * bitmap->width + x])
+            if (bit_set(bitmap->buffer, x, y, bitmap->pitch))
                 bits[x + originx][y + originy] = *pixel;
             else
                 bits[x + originx][y + originy] = blank_pixel;
@@ -110,15 +120,15 @@ int main(int argc, char *argv[])
 
     pixel_t       pixel = { MAX_BRIGHT, MAX_RGB, 0, 0 };
     bits_t bits;
-    int rows = 0;
     int x, y;
     int skip;
 
     int originx;
     int max_x;
-    int max_y = 0;
     int base_y = 0;
     int wide, high;
+
+    FT_Bitmap_Size *bs;
 
     LED_HANDLE_T h;
 
@@ -129,13 +139,23 @@ int main(int argc, char *argv[])
     }
 
     error = FT_Init_FreeType(&library);
+    if (error)
+    {
+        fprintf(stderr, "Error initializing freetype\n");
+        exit (1);
+    }
     error = FT_New_Face(library, argv[1], 0, &face);
-
-    /* 1024 works for the 5x7 font.  Go figure */
-    //if (memcmp(argv[1], "elegant", 7) == 0)
-        error = FT_Set_Char_Size( face, 512, 0, 72, 0 );
-    //else
-        //error = FT_Set_Char_Size( face, 1024, 0, 72, 0 );
+    if (error)
+    {
+        fprintf(stderr, "Error making face out of %s\n", argv[1]);
+        exit (2);
+    }
+    bs = face->available_sizes;
+    if (! bs)
+    {
+        fprintf(stderr, "Error:  this only works with bitmap fonts.  Try to find a .bdf file.\n");
+        exit (1);
+    }
 
     memset(bits, 0, sizeof(bits));
 
@@ -151,37 +171,31 @@ int main(int argc, char *argv[])
         /* load glyph image into the slot (erase previous one) */
         error = FT_Load_Char( face, *p, FT_LOAD_RENDER);
         if ( error )
-          continue;                 /* ignore errors */
-
-        if (rows <= 0)
-            rows = face->glyph->bitmap.rows;
-
-        if (rows > max_y)
-            max_y = rows;
-
-
-        assert(x + face->glyph->bitmap.width < MAX_COLS);
+        {
+            fprintf(stderr, "Couldn't load '%c'\n", *p);
+            continue;                 /* ignore errors */
+        }
 
         draw_bitmap(&face->glyph->bitmap, x, y, bits, &pixel);
 
         x += face->glyph->bitmap.width;
 
+#if defined(HACK_THIS_OUT_FOR_NOW)
         /* Deliberately add 1 column of spaces */
+        /*  Seems like BDF fonts make provision for spaces */
         x++;
+#endif
     }
 
     max_x = x;
-
-    FT_Done_Face    ( face );
-    FT_Done_FreeType( library );
 
     h = led_init();
     if (h)
     {
         led_get_size(h, &wide, &high);
 
-        if (max_y < high)
-            base_y = (high - max_y) / 2;
+        if (bs->height < high)
+            base_y = (high - bs->height) / 2;
 
         originx = 0;
         while (1)
@@ -191,7 +205,7 @@ int main(int argc, char *argv[])
                 originx = 0;
 
             for (x = 0; x < wide; x++)
-                for (y = 0; y < max_y; y++)
+                for (y = 0; y < bs->height; y++)
                 {
                     pixel_t *pixel = &bits[(originx + x) % max_x][y];
                     led_set_pixel(h, x, y + base_y, pixel->bright, pixel->r, pixel->g, pixel->b);
@@ -202,6 +216,10 @@ int main(int argc, char *argv[])
             usleep(200000);
         }
     }
+
+    FT_Done_Face    ( face );
+    FT_Done_FreeType( library );
+
     return 0;
 }
 

@@ -176,8 +176,11 @@ int main(int argc, char *argv[])
 
         x += face->glyph->bitmap.width;
 
+#if defined(HACK_THIS_OUT_FOR_NOW)
         /* Deliberately add 1 column of spaces */
+        /*  Seems like BDF fonts make provision for spaces */
         x++;
+#endif
     }
 
     printf("#define MESSAGE_ROWS %d\n", bs->height);
