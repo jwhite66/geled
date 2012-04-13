@@ -200,7 +200,7 @@ void compute_x_y(int addr, long start, long end, long fromx, long fromy, long to
         col = width - (addr % width) - 1;
 
     *x = fromx + col;
-    *y = toy - row;
+    *y = fromy + row;
 }
 
 
