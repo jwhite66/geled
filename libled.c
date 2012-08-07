@@ -20,6 +20,7 @@ typedef struct
     int fd;
     const char *portname;
     unsigned long writes;
+    unsigned long confirms;
     int confirm_every;
     config_t config;
     long height;
@@ -160,6 +161,8 @@ static void writebuf(serial_t *ser, unsigned char *out, int size)
             if (ser->writes % ser->confirm_every == 0)
                 if (getok(ser->fd, 1, 1000 * 1000) < 0)
                     fprintf(stderr, "Error:  did not get periodic ack\n");
+                else
+                    ser->confirms++;
     }
     else
         fprintf(stderr, "Error: could not writebuf\n");
@@ -211,7 +214,7 @@ serial_t *led_init(void)
     serial_t *ser = malloc(sizeof(*ser));
     memset(ser, 0, sizeof(*ser));
 
-    ser->confirm_every = (64 / 4) - 4;
+    ser->confirm_every = 24;
 
     config_init(&ser->config);
     if (config_read_file(&ser->config, LED_CFG_FILE) == CONFIG_FALSE)
@@ -305,5 +308,6 @@ void led_set_pixel(serial_t *ser, int x, int y, int bright, int r, int g, int b)
 
 void led_term(serial_t *ser)
 {
+    printf("done; wrote %ld, confirmed %ld\n", ser->writes, ser->confirms);
     free(ser);
 }
