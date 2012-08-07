@@ -78,7 +78,7 @@ $(OUTDIR)/message.h: Makefile $(OUTDIR)/makemap
 	$(OUTDIR)/makemap 6x10.bdf "$(MESSAGE)" > $(OUTDIR)/message.h
 
 $(OUTDIR)/generated_led.cpp: led.pde led.h $(OUTDIR)/message.h
-	@echo '#include <Arduino.h>' > $@
+	@echo '#include <WProgram.h>' > $@
 	@cat $< >>$@
 
 $(OUTDIR)/generated_led.o: $(OUTDIR)/generated_led.cpp
