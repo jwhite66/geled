@@ -22,7 +22,7 @@
         <link rel="icon" href="litblock.png" />
     
         <script src="jquery-1.6.4.js"></script>
-        <script src="jquery-textFill-0.1.js"></script>
+        <script src="jquery.textfill.js"></script>
 
        <script type="text/javascript">
             /* Run a command and get the status back */
