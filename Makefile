@@ -72,7 +72,8 @@ OBJECTS=$(OUTDIR)/generated_led.o $(OUTDIR)/Print.o $(OUTDIR)/HardwareSerial.o $
 all: $(TARGET_HEX) $(OUTDIR)/drive $(OUTDIR)/makemap \
         $(OUTDIR)/ledscroll $(OUTDIR)/ledscrollsim \
         $(OUTDIR)/war $(OUTDIR)/warsim \
-        $(OUTDIR)/tetris $(OUTDIR)/tetrissim 
+        $(OUTDIR)/tetris $(OUTDIR)/tetrissim  \
+        $(OUTDIR)/showgif $(OUTDIR)/showgifsim 
 
 $(OUTDIR)/message.h: Makefile $(OUTDIR)/makemap
 	$(OUTDIR)/makemap 6x10.bdf "$(MESSAGE)" > $(OUTDIR)/message.h
@@ -124,6 +125,12 @@ $(OUTDIR)/tetrissim: tetris.c tetris.h led.h $(OUTDIR)/libledsim.a $(OUTDIR)/fif
 
 $(OUTDIR)/tetris: tetris.c tetris.h led.h $(OUTDIR)/libled.a $(OUTDIR)/fifo.o
 	gcc -Wall -I. $(LIBLEDCFLAGS) -o $@ $< $(OUTDIR)/fifo.o $(LIBLEDLDFLAGS) -L$(OUTDIR) -lled -l pthread $(LIBCONFIGLDFLAGS) -lm
+
+$(OUTDIR)/showgifsim: showgif.c led.h $(OUTDIR)/libledsim.a $(OUTDIR)/fifo.o
+	gcc -g -Wall -I. -DSIMULATOR $(SIMCFLAGS) -o $@ $< $(OUTDIR)/fifo.o $(SIMLDFLAGS) -lgif
+
+$(OUTDIR)/showgif: showgif.c led.h $(OUTDIR)/libled.a $(OUTDIR)/fifo.o
+	gcc -g -Wall -I. $(LIBLEDCFLAGS) -o $@ $< $(OUTDIR)/fifo.o $(LIBLEDLDFLAGS) -L$(OUTDIR) -lled -l pthread $(LIBCONFIGLDFLAGS) -lgif
 
 $(OUTDIR)/makemap: makemap.c led.h
 	gcc -Wall -o $@ -I. -I $(OUTDIR) -I /usr/include/freetype2 $< -lfreetype -lm
