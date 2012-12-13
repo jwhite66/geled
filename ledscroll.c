@@ -211,12 +211,11 @@ int main(int argc, char *argv[])
                     pixel_t *pixel = &bits[(originx + x) % max_x][y];
                     led_set_pixel(h, x, y + base_y, pixel->bright, pixel->r, pixel->g, pixel->b);
                     g_pixels_set++;
-                    //usleep(1000000);
                 }
 
             originx++;
 
-            //usleep(150000);
+            usleep(150000);
         }
     }
 
