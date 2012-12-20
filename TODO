@@ -1,3 +1,6 @@
+* Jude would like chase to loop
+* Current signboard status
+* Drop down of stock messages
 * Investigate the hupcl business, and turn it correctly by default
 * Provide a flash ram setting to perform init on boot
 * Understand boot initialization

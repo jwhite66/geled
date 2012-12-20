@@ -1,7 +1,10 @@
 current-arduino
+arduino-0022
 *.o
 *.elf
 *.hex
+showgif
+showgifsim
 drive
 war
 warsim
@@ -16,3 +19,4 @@ testlib
 testlibsim
 ledscroll
 ledscrollsim
+web/tetris.score
