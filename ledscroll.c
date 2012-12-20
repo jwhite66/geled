@@ -85,6 +85,13 @@ int get_color_command(const char *p, pixel_t *pixel)
         red = 13;
         green = 1;
     }
+    else if (strncasecmp(p, "[white]", 7) == 0)
+    {
+        bright = MAX_BRIGHT;
+        red = 13;
+        green = 13;
+        blue = 13;
+    }
     else if (strncasecmp(p, "[yellow]", 8) == 0)
     {
         bright = MAX_BRIGHT;
