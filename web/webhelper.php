@@ -15,15 +15,6 @@ function run_cmd($c)
     return $rc;
 }
 
-/*
-    $fp = popen("ps -C ledscrollsim -o pid=,args=", "r");
-    while ($fp && !feof($fp))
-    {
-       $l = fgets($fp);
-       $msgpids .= $l;
-    }
-    pclose($fp);
-*/
 function parse_message($line_array, &$on)
 {
     $skip = true;
@@ -132,7 +123,10 @@ function handle_fifo()
         system("pkill ledscroll");
         run_cmd("DISPLAY=:0 ../ledscroll ../6x10.bdf '{$message}' > /dev/null 2>&1 &");
     }
-
+    else if ($cmd == "getmessage")
+    {
+        run_cmd("ps -C ledscroll -o pid=,args= || [ $? -eq 1 ]");
+    }
     else if ($cmd == "stopmessage")
     {
         system("pkill ledscroll");
